@@ -3,7 +3,7 @@ import pandas as pd
 import nflreadpy as nfl
 
 # Set page configuration for mobile-first layout
-st.set_page_config(page_title="Premium Bet Portfolio", layout="centered")
+st.set_page_config(page_title="NFL Bet Portfolio", layout="centered")
 
 # --- CUSTOM CSS FOR MODERN BORDERS ---
 # This injects a high-end glowing border style to make your parlay container pop
@@ -28,7 +28,7 @@ def load_nfl_data(year):
         return pd.DataFrame()
 
 # --- TITLE ---
-st.title("🏈 My Premium NFL Bet Portfolio")
+st.title("🏈 NFL Bet Portfolio")
 
 # --- SEASON TOGGLE ---
 VIEW_MODE = st.radio(
@@ -47,11 +47,11 @@ PARLAYS = [
         "payout": "$148.94",
         "legs": [
             {"name": "Rome Odunze", "db_name": "R.Odunze", "stat": "receiving_yards", "line": 799.5, "type": "player", "2025_actual": 661.0, 
-             "narrative": "Efficient 661-yard rookie profile playing inside a heavy target squeeze. Year 2 WR leaps are mathematically the sharpest in gridiron analytics. With Caleb Williams maturing out of raw rookie mechanics and an elevated snap share floor, clearing 47.1 yards per game is a premium baseline expectation."},
+             "narrative": "Requires clearing **799.5 receiving yards** (averaging 47.1 yards/game over a 17-game season). After a highly efficient 661-yard rookie campaign playing inside a heavy target squeeze, Year 2 wide receiver leaps are mathematically the sharpest in gridiron analytics. With Caleb Williams maturing and an elevated snap share floor, clearing this target is a premium baseline expectation."},
             {"name": "Josh Allen", "db_name": "J.Allen", "stat": "passing_yards", "line": 3549.5, "type": "player", "2025_actual": 3668.0, 
-             "narrative": "Cleared this line inside a highly transitionary year for the Bills passing tree in 2025 (3,668 yards). Line setter heavily discounts his historical volume floor; Allen has cleared 4,100 yards in 4 out of the last 6 seasons. Requires just 208.8 passing yards/game inside a highly dynamic, vertical offense."},
+             "narrative": "Requires clearing **3,549.5 passing yards** (averaging 208.8 yards/game). Allen cleared this line in 2025 with 3,668 yards despite a highly transitional Bills passing tree. This line heavily discounts his historical volume floor, as Allen has cleared 4,100 yards in four of his last six seasons."},
             {"name": "Kyren Williams", "db_name": "K.Williams", "stat": "rushing_yards", "line": 999.5, "type": "player", "2025_actual": 1252.0, 
-             "narrative": "Engine of Sean McVay's highly structural run-blocking hierarchy, which posted elite rushing success rates. Smashed for 1,252 yards in 2025 at a clean 4.8 YPC. While Blake Corum acts as a luxury spell, the Rams regular run-heavy neutral scripts guarantee high-value usage. A healthy 58.8 yards/game target is ultra-safe."}
+             "narrative": "Requires clearing **999.5 rushing yards** (averaging 58.8 yards/game). Williams is the engine of Sean McVay's highly structural run-blocking hierarchy, smashing for 1,252 yards in 2025 at a clean 4.8 YPC. While Blake Corum acts as a luxury spell, high-value usage in neutral scripts makes this target ultra-safe."}
         ]
     },
     {
@@ -61,9 +61,9 @@ PARLAYS = [
         "payout": "$39.53",
         "legs": [
             {"name": "Jordan Love", "db_name": "J.Love", "stat": "passing_yards", "line": 3500.0, "type": "player", "2025_actual": 3381.0, 
-             "narrative": "Love maintained an elite passing grade in 2025 (88.7 passing grade via PFF, 3rd in NFL). Threw for 3,381 yards despite variable weapon availability. Green Bay's deeply integrated aerial packages run natively through his arm, making 3,500 yards well within his regular efficiency range, especially with full target continuity."},
+             "narrative": "Requires clearing **3,500.0 passing yards** (averaging 205.9 yards/game). Love maintained an elite passing grade in 2025, throwing for 3,381 yards despite variable weapon availability. With full target continuity in Green Bay's deeply integrated aerial packages, 3,500 yards is well within his efficiency baseline."},
             {"name": "Drake Maye", "db_name": "D.Maye", "stat": "rushing_touchdowns", "line": 5.0, "type": "player", "2025_actual": 4.0, 
-             "narrative": "Boasts a highly elite rushing floor, logging 450 yards and 4 rushing scores in 2025. Alex Van Pelt’s offensive architecture actively utilizes designed heavy QB read-options inside the red zone. With unmatched high-value usage inside the 10-yard line, converting 5 scores on the ground is highly aligned with his athletic deployment."}
+             "narrative": "Requires reaching **5 rushing touchdowns** (needs 5 to push, 6 to win). Maye logged 4 rushing scores in 2025 alongside 450 rushing yards. Alex Van Pelt’s offensive architecture actively utilizes designed heavy QB read-options inside the red zone, guaranteeing Maye the high-value touches inside the 10-yard line required to clear this mark."}
         ]
     },
     {
@@ -73,11 +73,11 @@ PARLAYS = [
         "payout": "$141.23",
         "legs": [
             {"name": "Aaron Rodgers", "db_name": "A.Rodgers", "stat": "passing_touchdowns", "line": 21.5, "type": "player", "2025_actual": 24.0, 
-             "narrative": "Showed remarkable red-zone efficiency with 24 passing scores in 2025 inside a hard-nosed Pittsburgh landscape. His touchdown percentage floor is historically steady (4.8% in 2025). The target distribution mechanics mean clearing a low threshold of 22 passing scores remains standard business for his operational style."},
+             "narrative": "Requires clearing **21.5 passing touchdowns** (needs 22 scores, averaging 1.3 per game). Rodgers showed remarkable red-zone efficiency with 24 passing scores in 2025. His touchdown percentage floor is historically steady (4.8% in 2025), making 22 passing scores a standard business expectation for his operational style."},
             {"name": "George Pickens", "db_name": "G.Pickens", "stat": "receiving_touchdowns", "line": 6.5, "type": "player", "2025_actual": 9.0, 
-             "narrative": "Exploded inside the Dallas offense, racking up 1,429 receiving yards and 9 touchdowns in 2025 (ranking 6th among all WRs). Operating out of a highly explosive vertical system, his dynamic contested-catch ability yields premium end-zone targets. Line regression value here is massive."},
+             "narrative": "Requires clearing **6.5 receiving touchdowns** (needs 7 scores). Operating in an explosive offense, Pickens racked up 1,429 receiving yards and 9 touchdowns in 2025. His dynamic contested-catch ability yields premium end-zone looks, making this regression-based line massive value."},
             {"name": "Jonathan Taylor", "db_name": "J.Taylor", "stat": "rushing_touchdowns", "line": 11.5, "type": "player", "2025_actual": 18.0, 
-             "narrative": "The #1 overall fantasy running back in 2025, completely dominating with a massive 18 rushing touchdowns. Shane Steichen's inside-zone scheme inside the red zone funnels high-percentage carries straight to Taylor. Barring extreme backfield deviations, clearing 12 scores is completely anchored by his usage."}
+             "narrative": "Requires clearing **11.5 rushing touchdowns** (needs 12 scores). Taylor completely dominated as the league's top-tier fantasy back with a massive 18 rushing touchdowns in 2025. Shane Steichen's inside-zone scheme funnels high-percentage carries straight to Taylor inside the red zone, making 12 scores highly anchored by his usage."}
         ]
     },
     {
@@ -86,10 +86,10 @@ PARLAYS = [
         "wager": "$10.00",
         "payout": "$40.19",
         "legs": [
-            {"name": "Baltimore Ravens", "type": "division", "division": "AFC North", "target": "1st Place", "2025_result": "Contender", 
-             "narrative": "The Ravens field the most multi-dimensional run offense in modern football history. With Todd Monken maximizing dynamic schematics and an elite defensive efficiency anchor, Baltimore retains the physical advantage required to grind out the division crown over high-variance rivals."},
-            {"name": "Philadelphia Eagles", "type": "division", "division": "NFC East", "target": "1st Place", "2025_result": "11-6 (Div Winner)", 
-             "narrative": "Secured the division at 11-6 in 2025. The Eagles' front office maintains the most premium trenches inside the NFC East. With massive systemic advantages over transitional division rivals, the path to a back-to-back crown is highly backed by positional efficiency mapping."}
+            {"name": "Baltimore Ravens", "type": "division", "division": "AFC North", "target": "1st Place", "2025_result": "8-9 Regular Season Record", 
+             "narrative": "The Ravens field the most multi-dimensional run offense in modern football history. To surpass their 2025 record of **8-9** and win the division, Todd Monken must maximize dynamic schematics and leverage Baltimore's elite defensive efficiency to grind out AFC North wins over high-variance rivals."},
+            {"name": "Philadelphia Eagles", "type": "division", "division": "NFC East", "target": "1st Place", "2025_result": "11-6 Regular Season Record", 
+             "narrative": "The Eagles took the NFC East crown with an **11-6** record in 2025. Philadelphia's front office maintains the most premium trenches in the division. With massive systemic advantages over transitional division rivals (Cowboys: 7-9-1, Commanders: 5-12, Giants: 4-13), the path to a back-to-back crown is highly secure."}
         ]
     },
     {
@@ -98,10 +98,10 @@ PARLAYS = [
         "wager": "$5.00",
         "payout": "$54.33",
         "legs": [
-            {"name": "Green Bay Packers", "type": "division", "division": "NFC North", "target": "1st Place", "2025_result": "9-7-1 (Wildcard)", 
-             "narrative": "Matt LaFleur’s creative offensive spacing completely unlocked the second half of their campaign. Green Bay’s deep, ascending collection of young weapon networks represents the modern standard for offensive explosion, making them top favorites to knock off standard division architectures."},
-            {"name": "Jacksonville Jaguars", "type": "division", "division": "AFC South", "target": "1st Place", "2025_result": "Contender", 
-             "narrative": "The AFC South remains ripe for structural breakout. With high-value draft capital reinforcing defensive spacing and stability inside their operational system, Jacksonville possesses the exact high-value roster blueprint needed to vault ahead and claim the divisional title."}
+            {"name": "Green Bay Packers", "type": "division", "division": "NFC North", "target": "1st Place", "2025_result": "9-7-1 Regular Season Record", 
+             "narrative": "Matt LaFleur’s creative offensive spacing completely unlocked the second half of the campaign, helping Green Bay secure a **9-7-1** wildcard finish in 2025. The Packers’ ascending collection of young playmakers represents the modern standard for offensive explosion, making them top favorites to knock off divisional rivals like the Bears (11-6), Lions (9-8), and Vikings (9-8)."},
+            {"name": "Jacksonville Jaguars", "type": "division", "division": "AFC South", "target": "1st Place", "2025_result": "13-4 Regular Season Record", 
+             "narrative": "Jacksonville dominated the AFC South in 2025 with an elite **13-4** record. With high-value draft capital reinforcing their defensive spacing and absolute stability inside their operational system, they possess the exact roster blueprint needed to keep the Texans (12-5), Colts (8-9), and Titans (3-14) at bay."}
         ]
     },
     {
@@ -110,12 +110,18 @@ PARLAYS = [
         "wager": "BONUS BET",
         "payout": "$166.35",
         "legs": [
-            {"name": "Green Bay Packers", "type": "playoff", "target": "Make Playoffs", "2025_result": "Made Playoffs", "narrative": "Maintained an elite developmental curve under Jordan Love, executing high-value passing matrices. Roster configuration is young, locked into cheap deals, and perfectly primed to retain a steady wildcard baseline at absolute minimum."},
-            {"name": "Buffalo Bills", "type": "playoff", "target": "Make Playoffs", "2025_result": "Made Playoffs", "narrative": "As long as Josh Allen is under center, Buffalo’s baseline structural floor guarantees a post-season push. The highly efficient vertical scheme ensures a massive win-floor projection independent of high roster turnover."},
-            {"name": "Kansas City Chiefs", "type": "playoff", "target": "Make Playoffs", "2025_result": "Made Playoffs", "narrative": "The standard metric lock of modern football analytics. Andy Reid and Patrick Mahomes' structural playoff blueprint makes calculating anything less than a post-season ticket entirely mathematically invalid."},
-            {"name": "Baltimore Ravens", "type": "playoff", "target": "Make Playoffs", "2025_result": "Made Playoffs", "narrative": "Built completely on consistent regular-season destruction through high-efficiency defensive structures and continuous ground dominance. Possess a top-tier consistency floor that minimizes variable volatility."},
-            {"name": "Los Angeles Rams", "type": "playoff", "target": "Make Playoffs", "2025_result": "Made Playoffs (12-5)", "narrative": "McVay’s hyper-efficient zone schemes cruised to a strong 12-5 record in 2025. Matthew Stafford's structural processing skill set combined with high-percentage skill weapons locks in a very premium NFC floor."},
-            {"name": "Philadelphia Eagles", "type": "playoff", "target": "Make Playoffs", "2025_result": "Made Playoffs (11-6)", "narrative": "An 11-6 foundational output in 2025 underscores a highly premium roster footprint. Built around elite inside line frameworks and premium offensive weapon arrays, securing a post-season berth represents a clear baseline hurdle."}
+            {"name": "Green Bay Packers", "type": "playoff", "target": "Make Playoffs", "2025_result": "9-7-1 Regular Season Record", 
+             "narrative": "The Packers executed an elite developmental curve under Jordan Love to grab a wildcard spot in 2025 at **9-7-1**. This young, cheap, and highly talented roster is perfectly primed to retain a steady wildcard baseline at absolute minimum."},
+            {"name": "Buffalo Bills", "type": "playoff", "target": "Make Playoffs", "2025_result": "12-5 Regular Season Record", 
+             "narrative": "Buffalo cruised to a **12-5** record in 2025. As long as Josh Allen is under center, Buffalo’s baseline structural floor guarantees a deep post-season push. The highly efficient vertical scheme ensures a massive win-floor projection independent of roster turnover."},
+            {"name": "Kansas City Chiefs", "type": "playoff", "target": "Make Playoffs", "2025_result": "6-11 Regular Season Record", 
+             "narrative": "The standard metric lock of modern football analytics. Despite a transitional **6-11** rebuilding regular season in 2025, Andy Reid and Patrick Mahomes' structural playoff blueprint makes calculating anything less than a post-season ticket entirely mathematically invalid."},
+            {"name": "Baltimore Ravens", "type": "playoff", "target": "Make Playoffs", "2025_result": "8-9 Regular Season Record", 
+             "narrative": "Following an **8-9** run in 2025, the Ravens are built entirely on consistent regular-season defensive structures and continuous ground dominance. They possess a top-tier consistency floor that minimizes variable volatility and secures wildcard contention."},
+            {"name": "Los Angeles Rams", "type": "playoff", "target": "Make Playoffs", "2025_result": "12-5 Regular Season Record", 
+             "narrative": "McVay’s hyper-efficient zone schemes cruised to a strong **12-5** record in 2025. Matthew Stafford's structural processing skill set combined with high-percentage skill weapons locks in a very premium NFC playoff floor."},
+            {"name": "Philadelphia Eagles", "type": "playoff", "target": "Make Playoffs", "2025_result": "11-6 Regular Season Record", 
+             "narrative": "An **11-6** foundational output in 2025 underscores a highly premium roster footprint. Built around elite inside line frameworks and premium offensive weapon arrays, securing a consecutive post-season berth represents a clear baseline hurdle."}
         ]
     }
 ]
@@ -228,6 +234,7 @@ else:
                     st.markdown(f"🎯 Objective: **{leg.get('target', 'Win Division')}**")
                 with c2:
                     st.markdown("Status: `Pending` ⏳")
+            st.markdown(leg['narrative'])
             st.markdown("<br>", unsafe_allow_html=True)
 
 # --- DYNAMIC BOTTOM NAVIGATION ---
