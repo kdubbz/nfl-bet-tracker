@@ -5,6 +5,19 @@ import nflreadpy as nfl
 # Set page configuration for mobile-first layout
 st.set_page_config(page_title="Premium Bet Portfolio", layout="centered")
 
+# --- CUSTOM CSS FOR MODERN BORDERS ---
+# This injects a high-end glowing border style to make your parlay container pop
+st.html("""
+<style>
+.st-key-parlay-card {
+    border: 2px solid #31333F !important;
+    border-radius: 12px !important;
+    padding: 20px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+</style>
+""")
+
 # --- DATA FETCHING ---
 @st.cache_data(ttl=86400)
 def load_nfl_data(year):
@@ -108,38 +121,20 @@ PARLAYS = [
 ]
 
 # --- INSTAGRAM-STYLE CAROUSEL STATE ---
-# Initialize session state so it remembers which parlay you are swiping through
 if "parlay_index" not in st.session_state:
     st.session_state.parlay_index = 0
 
 def prev_slide():
     if st.session_state.parlay_index > 0:
         st.session_state.parlay_index -= 1
-    else:
-        st.session_state.parlay_index = len(PARLAYS) - 1  # Wrap around to end
 
 def next_slide():
     if st.session_state.parlay_index < len(PARLAYS) - 1:
         st.session_state.parlay_index += 1
-    else:
-        st.session_state.parlay_index = 0  # Wrap around to start
-
-# Render the Scroll Controller at the top
-st.write("---")
-col_prev, col_indicator, col_next = st.columns([1, 2, 1])
-with col_prev:
-    st.button("◀ Previous", on_click=prev_slide, use_container_width=True)
-with col_indicator:
-    st.markdown(
-        f"<h4 style='text-align: center; margin: 0;'>Parlay {st.session_state.parlay_index + 1} of {len(PARLAYS)}</h4>", 
-        unsafe_allow_html=True
-    )
-with col_next:
-    st.button("Next ▶", on_click=next_slide, use_container_width=True)
-st.write("---")
 
 # Extract currently selected parlay based on scroll state
-current_parlay = PARLAYS[st.session_state.parlay_index]
+idx = st.session_state.parlay_index
+current_parlay = PARLAYS[idx]
 
 # Load API stats dataframe
 stats_df = load_nfl_data(2025 if "2025" in VIEW_MODE else 2026)
@@ -150,7 +145,7 @@ stats_df = load_nfl_data(2025 if "2025" in VIEW_MODE else 2026)
 if "2025" in VIEW_MODE:
     st.header("🔬 Analytical Research & Baseline Metrics")
     
-    with st.container(border=True):
+    with st.container(border=True, key="parlay-card"):
         st.subheader(f"⚡ {current_parlay['title']}")
         col_a, col_b = st.columns(2)
         with col_a:
@@ -194,11 +189,9 @@ if "2025" in VIEW_MODE:
 # =========================================================
 else:
     st.header("📊 Active 2026 Parlay Progress Tracker")
-    
-    # Strictly live notification, absolutely no fake statistics simulated.
     st.info("ℹ️ Note: Live statistics will refresh automatically throughout the course of the season once games begin.")
     
-    with st.container(border=True):
+    with st.container(border=True, key="parlay-card"):
         st.subheader(f"⚡ {current_parlay['title']}")
         col_a, col_b = st.columns(2)
         with col_a:
@@ -212,7 +205,6 @@ else:
             
             if leg['type'] == 'player':
                 current_total = 0.0
-                # Pull raw data ONLY from live database if games have officially started
                 if not stats_df.empty and 'player_name' in stats_df.columns:
                     db_name = leg['db_name'].replace(" ", "")
                     player_data = stats_df[stats_df['player_name'] == db_name]
@@ -220,17 +212,15 @@ else:
                         current_total = player_data[leg['stat']].sum()
                 
                 pct_complete = min(float(current_total / leg['line']), 1.0) if leg['line'] > 0 else 0.0
-                remaining = max(leg['line'] - current_total, 0)
                 
+                # Single metrics row displaying only Current Progress vs Goal
                 c1, c2 = st.columns(2)
                 with c1:
                     st.metric(label="Current 2026 Total", value=f"{current_total:,.1f}")
-                with col_indicator if 'col_indicator' in locals() else c2: # Safeguard
-                    if remaining > 0:
-                        st.metric(label="Remaining to Cover", value=f"{remaining:,.1f}")
-                    else:
-                        st.metric(label="Leg Status", value="🎉 COVERED!")
-                st.progress(pct_complete, text=f"{pct_complete*100:.1f}% of {leg['line']:,} Target completed")
+                with c2:
+                    st.metric(label="Goal Line", value=f"{leg['line']:,}")
+                    
+                st.progress(pct_complete, text=f"{pct_complete*100:.1f}% Completed")
             
             else:
                 c1, c2 = st.columns([2, 1])
@@ -239,4 +229,31 @@ else:
                 with c2:
                     st.markdown("Status: `Pending` ⏳")
             st.markdown("<br>", unsafe_allow_html=True)
-            
+
+# --- DYNAMIC BOTTOM NAVIGATION ---
+st.write("---")
+# Build column space depending on if buttons should be hidden
+if idx == 0:
+    # First parlay: Hide "Previous" by using an empty spacer column
+    col_prev, col_indicator, col_next = st.columns([1, 2, 1])
+    with col_indicator:
+        st.markdown(f"<h4 style='text-align: center; margin-top: 5px;'>Parlay {idx + 1} of {len(PARLAYS)}</h4>", unsafe_allow_html=True)
+    with col_next:
+        st.button("Next ▶", on_click=next_slide, use_container_width=True)
+elif idx == len(PARLAYS) - 1:
+    # Last parlay: Hide "Next" by using an empty spacer column
+    col_prev, col_indicator, col_next = st.columns([1, 2, 1])
+    with col_prev:
+        st.button("◀ Previous", on_click=prev_slide, use_container_width=True)
+    with col_indicator:
+        st.markdown(f"<h4 style='text-align: center; margin-top: 5px;'>Parlay {idx + 1} of {len(PARLAYS)}</h4>", unsafe_allow_html=True)
+else:
+    # Middle parlays: Render both buttons
+    col_prev, col_indicator, col_next = st.columns([1, 2, 1])
+    with col_prev:
+        st.button("◀ Previous", on_click=prev_slide, use_container_width=True)
+    with col_indicator:
+        st.markdown(f"<h4 style='text-align: center; margin-top: 5px;'>Parlay {idx + 1} of {len(PARLAYS)}</h4>", unsafe_allow_html=True)
+    with col_next:
+        st.button("Next ▶", on_click=next_slide, use_container_width=True)
+st.write("---")
