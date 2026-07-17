@@ -22,14 +22,14 @@ VIEW_MODE = st.radio(
     "Select View Mode:",
     options=["🔬 2025 Research & Baselines", "📊 Live 2026 Tracking Tracker"],
     horizontal=True,
-    help="Toggle between deep metric baselines and live 2026 tracking grids."
+    help="Toggle between historical research/projections and live 2026 tracking."
 )
 
 # --- PORTFOLIO DEFINITIONS ---
 PARLAYS = [
     {
-        "id": "parlay_1",
-        "title": "Leg 1: The Triple-Threat Over",
+        "id": 0,
+        "title": "The Triple-Threat Over",
         "wager": "BONUS BET",
         "payout": "$148.94",
         "legs": [
@@ -42,8 +42,8 @@ PARLAYS = [
         ]
     },
     {
-        "id": "parlay_2",
-        "title": "Leg 2: Franchise Aerial & Mobile Engine",
+        "id": 1,
+        "title": "Franchise Aerial & Mobile Engine",
         "wager": "BONUS BET",
         "payout": "$39.53",
         "legs": [
@@ -54,8 +54,8 @@ PARLAYS = [
         ]
     },
     {
-        "id": "parlay_3",
-        "title": "Leg 3: Elite High-Volume Touchdown Slate",
+        "id": 2,
+        "title": "Elite High-Volume Touchdown Slate",
         "wager": "BONUS BET",
         "payout": "$141.23",
         "legs": [
@@ -68,8 +68,8 @@ PARLAYS = [
         ]
     },
     {
-        "id": "parlay_4",
-        "title": "Leg 4: Heavy Divisional Heavyweights",
+        "id": 3,
+        "title": "Heavy Divisional Heavyweights",
         "wager": "$10.00",
         "payout": "$40.19",
         "legs": [
@@ -80,8 +80,8 @@ PARLAYS = [
         ]
     },
     {
-        "id": "parlay_5",
-        "title": "Leg 5: Precision Divisional Contenders",
+        "id": 4,
+        "title": "Precision Divisional Contenders",
         "wager": "$5.00",
         "payout": "$54.33",
         "legs": [
@@ -92,8 +92,8 @@ PARLAYS = [
         ]
     },
     {
-        "id": "parlay_6",
-        "title": "Leg 6: Mega Playoff Bracket Clean Sweep",
+        "id": 5,
+        "title": "Mega Playoff Bracket Clean Sweep",
         "wager": "BONUS BET",
         "payout": "$166.35",
         "legs": [
@@ -107,110 +107,136 @@ PARLAYS = [
     }
 ]
 
-# --- LOAD DATA PER SELECTION ---
+# --- INSTAGRAM-STYLE CAROUSEL STATE ---
+# Initialize session state so it remembers which parlay you are swiping through
+if "parlay_index" not in st.session_state:
+    st.session_state.parlay_index = 0
+
+def prev_slide():
+    if st.session_state.parlay_index > 0:
+        st.session_state.parlay_index -= 1
+    else:
+        st.session_state.parlay_index = len(PARLAYS) - 1  # Wrap around to end
+
+def next_slide():
+    if st.session_state.parlay_index < len(PARLAYS) - 1:
+        st.session_state.parlay_index += 1
+    else:
+        st.session_state.parlay_index = 0  # Wrap around to start
+
+# Render the Scroll Controller at the top
+st.write("---")
+col_prev, col_indicator, col_next = st.columns([1, 2, 1])
+with col_prev:
+    st.button("◀ Previous", on_click=prev_slide, use_container_width=True)
+with col_indicator:
+    st.markdown(
+        f"<h4 style='text-align: center; margin: 0;'>Parlay {st.session_state.parlay_index + 1} of {len(PARLAYS)}</h4>", 
+        unsafe_allow_html=True
+    )
+with col_next:
+    st.button("Next ▶", on_click=next_slide, use_container_width=True)
+st.write("---")
+
+# Extract currently selected parlay based on scroll state
+current_parlay = PARLAYS[st.session_state.parlay_index]
+
+# Load API stats dataframe
 stats_df = load_nfl_data(2025 if "2025" in VIEW_MODE else 2026)
-live_active = not stats_df.empty if "2026" in VIEW_MODE else True
 
 # =========================================================
 # 🔬 VIEW 1: 2025 RESEARCH & BASELINES
 # =========================================================
 if "2025" in VIEW_MODE:
     st.header("🔬 Analytical Research & Baseline Metrics")
-    st.write("Deep statistical analysis, historical inputs, and structural rationales behind every wager.")
     
-    for parlay in PARLAYS:
-        with st.container(border=True):
-            # Header block with precise bet metrics
-            st.subheader(f"⚡ {parlay['title']}")
-            col_a, col_b = st.columns(2)
-            with col_a:
-                st.markdown(f"**Wager:** `{parlay['wager']}`")
-            with col_b:
-                st.markdown(f"**Est. Payout:** `{parlay['payout']}`")
-            st.divider()
+    with st.container(border=True):
+        st.subheader(f"⚡ {current_parlay['title']}")
+        col_a, col_b = st.columns(2)
+        with col_a:
+            st.markdown(f"**Wager:** `{current_parlay['wager']}`")
+        with col_b:
+            st.markdown(f"**Est. Payout:** `{current_parlay['payout']}`")
+        st.divider()
+        
+        for leg in current_parlay['legs']:
+            st.markdown(f"#### 🎯 {leg['name']}")
             
-            # Print details per leg inside the container box
-            for leg in parlay['legs']:
-                st.markdown(f"#### 🎯 {leg['name']}")
-                
-                if leg['type'] == 'player':
-                    c1, c2, c3 = st.columns(3)
-                    with c1:
-                        st.metric(label="2026 Target Line", value=f"{leg['line']:,}")
-                    with c2:
-                        db_name = leg['db_name'].replace(" ", "")
-                        api_stat = 0
-                        if not stats_df.empty and 'player_name' in stats_df.columns:
-                            player_data = stats_df[stats_df['player_name'] == db_name]
-                            if not player_data.empty and leg['stat'] in stats_df.columns:
-                                api_stat = player_data[leg['stat']].sum()
-                        
-                        display_val = api_stat if api_stat > 0 else leg['2025_actual']
-                        st.metric(label="2025 Baseline", value=f"{display_val:,.0f}")
-                    with c3:
-                        diff = leg['line'] - display_val
-                        st.metric(label="Target Variance vs '25", value=f"{'+' if diff > 0 else ''}{diff:,.1f}")
-                else:
-                    c1, c2 = st.columns(2)
-                    with c1:
-                        st.markdown(f"**Target Objective:** `{leg.get('target', leg.get('division'))}`")
-                    with c2:
-                        st.markdown(f"**2025 Structural Context:** `{leg['2025_result']}`")
-                
-                st.markdown(leg['narrative'])
-                st.markdown("---")
+            if leg['type'] == 'player':
+                c1, c2, c3 = st.columns(3)
+                with c1:
+                    st.metric(label="2026 Target Line", value=f"{leg['line']:,}")
+                with c2:
+                    db_name = leg['db_name'].replace(" ", "")
+                    api_stat = 0
+                    if not stats_df.empty and 'player_name' in stats_df.columns:
+                        player_data = stats_df[stats_df['player_name'] == db_name]
+                        if not player_data.empty and leg['stat'] in stats_df.columns:
+                            api_stat = player_data[leg['stat']].sum()
+                    
+                    display_val = api_stat if api_stat > 0 else leg['2025_actual']
+                    st.metric(label="2025 Baseline", value=f"{display_val:,.0f}")
+                with c3:
+                    diff = leg['line'] - display_val
+                    st.metric(label="Target Variance vs '25", value=f"{'+' if diff > 0 else ''}{diff:,.1f}")
+            else:
+                c1, c2 = st.columns(2)
+                with c1:
+                    st.markdown(f"**Target Objective:** `{leg.get('target', leg.get('division'))}`")
+                with c2:
+                    st.markdown(f"**2025 Structural Context:** `{leg['2025_result']}`")
+            
+            st.markdown(leg['narrative'])
+            st.markdown("---")
 
 # =========================================================
 # 📊 VIEW 2: 2026 LIVE TRACK
 # =========================================================
 else:
     st.header("📊 Active 2026 Parlay Progress Tracker")
-    if not live_active:
-        st.warning("🟡 Live regular season statistics are not active yet. Displaying simulated portfolio tracking.")
+    
+    # Strictly live notification, absolutely no fake statistics simulated.
+    st.info("ℹ️ Note: Live statistics will refresh automatically throughout the course of the season once games begin.")
+    
+    with st.container(border=True):
+        st.subheader(f"⚡ {current_parlay['title']}")
+        col_a, col_b = st.columns(2)
+        with col_a:
+            st.markdown(f"**Wager:** `{current_parlay['wager']}`")
+        with col_b:
+            st.markdown(f"**Est. Payout:** `{current_parlay['payout']}`")
+        st.divider()
         
-    for parlay in PARLAYS:
-        with st.container(border=True):
-            st.subheader(f"⚡ {parlay['title']}")
-            col_a, col_b = st.columns(2)
-            with col_a:
-                st.markdown(f"**Wager:** `{parlay['wager']}`")
-            with col_b:
-                st.markdown(f"**Est. Payout:** `{parlay['payout']}`")
-            st.divider()
+        for leg in current_parlay['legs']:
+            st.markdown(f"##### {leg['name']}")
             
-            # Compute leg data and display progress inside the card
-            for leg in parlay['legs']:
-                st.markdown(f"##### {leg['name']}")
+            if leg['type'] == 'player':
+                current_total = 0.0
+                # Pull raw data ONLY from live database if games have officially started
+                if not stats_df.empty and 'player_name' in stats_df.columns:
+                    db_name = leg['db_name'].replace(" ", "")
+                    player_data = stats_df[stats_df['player_name'] == db_name]
+                    if not player_data.empty and leg['stat'] in stats_df.columns:
+                        current_total = player_data[leg['stat']].sum()
                 
-                if leg['type'] == 'player':
-                    current_total = 0.0
-                    if not stats_df.empty and 'player_name' in stats_df.columns:
-                        db_name = leg['db_name'].replace(" ", "")
-                        player_data = stats_df[stats_df['player_name'] == db_name]
-                        if not player_data.empty and leg['stat'] in stats_df.columns:
-                            current_total = player_data[leg['stat']].sum()
-                    elif not live_active:
-                        # Clean placeholder simulations for display
-                        current_total = leg['2025_actual'] * 0.05
-                    
-                    pct_complete = min(float(current_total / leg['line']), 1.0) if leg['line'] > 0 else 0.0
-                    remaining = max(leg['line'] - current_total, 0)
-                    
-                    c1, c2 = st.columns(2)
-                    with c1:
-                        st.metric(label="Current 2026 Total", value=f"{current_total:,.1f}")
-                    with c2:
-                        if remaining > 0:
-                            st.metric(label="Yards to Cover", value=f"{remaining:,.1f}")
-                        else:
-                            st.metric(label="Leg Status", value="🎉 COVERED!")
-                    st.progress(pct_complete, text=f"{pct_complete*100:.1f}% of {leg['line']:,} Target completed")
+                pct_complete = min(float(current_total / leg['line']), 1.0) if leg['line'] > 0 else 0.0
+                remaining = max(leg['line'] - current_total, 0)
                 
-                else:
-                    # Division / Playoff tracking blocks inside the parlay container
-                    c1, c2 = st.columns([2, 1])
-                    with c1:
-                        st.markdown(f"🎯 Objective: **{leg.get('target', 'Win Division')}**")
-                    with c2:
-                        st.markdown("Status: `Pending` ⏳")
-                st.markdown("<br>", unsafe_allow_html=True)
+                c1, c2 = st.columns(2)
+                with c1:
+                    st.metric(label="Current 2026 Total", value=f"{current_total:,.1f}")
+                with col_indicator if 'col_indicator' in locals() else c2: # Safeguard
+                    if remaining > 0:
+                        st.metric(label="Remaining to Cover", value=f"{remaining:,.1f}")
+                    else:
+                        st.metric(label="Leg Status", value="🎉 COVERED!")
+                st.progress(pct_complete, text=f"{pct_complete*100:.1f}% of {leg['line']:,} Target completed")
+            
+            else:
+                c1, c2 = st.columns([2, 1])
+                with c1:
+                    st.markdown(f"🎯 Objective: **{leg.get('target', 'Win Division')}**")
+                with c2:
+                    st.markdown("Status: `Pending` ⏳")
+            st.markdown("<br>", unsafe_allow_html=True)
+            
