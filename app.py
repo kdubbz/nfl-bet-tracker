@@ -99,9 +99,9 @@ PARLAYS = [
         "wager": "$10.00",
         "payout": "$40.19",
         "legs": [
-            {"name": "Baltimore Ravens", "type": "division", "division": "AFC North", "target": "1st Place", "2025_result": "8-9 Regular Season Record", 
+            {"name": "Baltimore Ravens", "type": "division", "division": "AFC North", "target": "1st place in AFC North", "2025_result": "8-9 Regular Season Record", 
              "narrative": "The Ravens field the most multi-dimensional run offense in modern football history. To surpass their 2025 record of **8-9** and win the division, Todd Monken must maximize dynamic schematics and leverage Baltimore's elite defensive efficiency to grind out AFC North wins over high-variance rivals."},
-            {"name": "Philadelphia Eagles", "type": "division", "division": "NFC East", "target": "1st Place", "2025_result": "11-6 Regular Season Record", 
+            {"name": "Philadelphia Eagles", "type": "division", "division": "NFC East", "target": "1st place in NFC East", "2025_result": "11-6 Regular Season Record", 
              "narrative": "The Eagles took the NFC East crown with an **11-6** record in 2025. Philadelphia's front office maintains the most premium trenches in the division. With massive systemic advantages over transitional division rivals (Cowboys: 7-9-1, Commanders: 5-12, Giants: 4-13), the path to a back-to-back crown is highly secure."}
         ]
     },
@@ -111,9 +111,9 @@ PARLAYS = [
         "wager": "$5.00",
         "payout": "$54.33",
         "legs": [
-            {"name": "Green Bay Packers", "type": "division", "division": "NFC North", "target": "1st Place", "2025_result": "9-7-1 Regular Season Record", 
+            {"name": "Green Bay Packers", "type": "division", "division": "NFC North", "target": "1st place in NFC North", "2025_result": "9-7-1 Regular Season Record", 
              "narrative": "Matt LaFleur’s creative offensive spacing completely unlocked the second half of the campaign, helping Green Bay secure a **9-7-1** wildcard finish in 2025. The Packers’ ascending collection of young playmakers represents the modern standard for offensive explosion, making them top favorites to knock off divisional rivals like the Bears (11-6), Lions (9-8), and Vikings (9-8)."},
-            {"name": "Jacksonville Jaguars", "type": "division", "division": "AFC South", "target": "1st Place", "2025_result": "13-4 Regular Season Record", 
+            {"name": "Jacksonville Jaguars", "type": "division", "division": "AFC South", "target": "1st place in AFC South", "2025_result": "13-4 Regular Season Record", 
              "narrative": "Jacksonville dominated the AFC South in 2025 with an elite **13-4** record. With high-value draft capital reinforcing their defensive spacing and absolute stability inside their operational system, they possess the exact roster blueprint needed to keep the Texans (12-5), Colts (8-9), and Titans (3-14) at bay."}
         ]
     },
@@ -197,7 +197,8 @@ if "2025" in VIEW_MODE:
             else:
                 c1, c2 = st.columns(2)
                 with c1:
-                    st.markdown(f"**Target Objective:** `{leg.get('target', leg.get('division'))}`")
+                    target_label = f"Objective: {leg['target']}" if leg['type'] == 'division' else f"Target Objective: {leg['target']}"
+                    st.markdown(f"**{target_label}**")
                 with c2:
                     st.markdown(f"**2025 Structural Context:** `{leg['2025_result']}`")
             
@@ -246,11 +247,11 @@ else:
             else:
                 c1, c2 = st.columns([2, 1])
                 with c1:
-                    st.markdown(f"🎯 Objective: **{leg.get('target', 'Win Division')}**")
+                    target_label = f"Objective: **{leg['target']}**" if leg['type'] == 'division' else f"🎯 Objective: **{leg['target']}**"
+                    st.markdown(target_label)
                 with c2:
                     st.markdown("Status: `Pending` ⏳")
             
-            # Narrative blurb completely removed from this view to keep it clean!
             st.markdown("<br>", unsafe_allow_html=True)
 
 # --- DYNAMIC BOTTOM NAVIGATION ---
