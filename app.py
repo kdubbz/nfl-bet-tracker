@@ -205,7 +205,7 @@ if "2025" in VIEW_MODE:
             st.markdown("---")
 
 # =========================================================
-# 📊 VIEW 2: 2026 LIVE TRACK
+# 📊 VIEW 2: 2026 LIVE TRACK (CLEAN & MINIMAL)
 # =========================================================
 else:
     st.header("📊 Active 2026 Parlay Progress Tracker")
@@ -234,7 +234,7 @@ else:
                 pct_complete = min(float(current_total / leg['line']), 1.0) if leg['line'] > 0 else 0.0
                 stat_name = get_stat_label(leg['stat'])
                 
-                # Single metrics row displaying only Current Progress vs Goal with precise context
+                # Metrics layout
                 c1, c2 = st.columns(2)
                 with c1:
                     st.metric(label=f"Current {stat_name}", value=f"{current_total:,.1f}")
@@ -249,28 +249,26 @@ else:
                     st.markdown(f"🎯 Objective: **{leg.get('target', 'Win Division')}**")
                 with c2:
                     st.markdown("Status: `Pending` ⏳")
-            st.markdown(leg['narrative'])
+            
+            # Narrative blurb completely removed from this view to keep it clean!
             st.markdown("<br>", unsafe_allow_html=True)
 
 # --- DYNAMIC BOTTOM NAVIGATION ---
 st.write("---")
 # Build column space depending on if buttons should be hidden
 if idx == 0:
-    # First parlay: Hide "Previous" by using an empty spacer column
     col_prev, col_indicator, col_next = st.columns([1, 2, 1])
     with col_indicator:
         st.markdown(f"<h4 style='text-align: center; margin-top: 5px;'>Parlay {idx + 1} of {len(PARLAYS)}</h4>", unsafe_allow_html=True)
     with col_next:
         st.button("Next ▶", on_click=next_slide, use_container_width=True)
 elif idx == len(PARLAYS) - 1:
-    # Last parlay: Hide "Next" by using an empty spacer column
     col_prev, col_indicator, col_next = st.columns([1, 2, 1])
     with col_prev:
         st.button("◀ Previous", on_click=prev_slide, use_container_width=True)
     with col_indicator:
         st.markdown(f"<h4 style='text-align: center; margin-top: 5px;'>Parlay {idx + 1} of {len(PARLAYS)}</h4>", unsafe_allow_html=True)
 else:
-    # Middle parlays: Render both buttons
     col_prev, col_indicator, col_next = st.columns([1, 2, 1])
     with col_prev:
         st.button("◀ Previous", on_click=prev_slide, use_container_width=True)
