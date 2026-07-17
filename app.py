@@ -99,10 +99,10 @@ PARLAYS = [
         "wager": "$10.00",
         "payout": "$40.19",
         "legs": [
-            {"name": "Baltimore Ravens", "type": "division", "division": "AFC North", "target": "1st place in AFC North", "2025_result": "8-9 Regular Season Record", 
-             "narrative": "The Ravens field the most multi-dimensional run offense in modern football history. To surpass their 2025 record of **8-9** and win the division, Todd Monken must maximize dynamic schematics and leverage Baltimore's elite defensive efficiency to grind out AFC North wins over high-variance rivals."},
-            {"name": "Philadelphia Eagles", "type": "division", "division": "NFC East", "target": "1st place in NFC East", "2025_result": "11-6 Regular Season Record", 
-             "narrative": "The Eagles took the NFC East crown with an **11-6** record in 2025. Philadelphia's front office maintains the most premium trenches in the division. With massive systemic advantages over transitional division rivals (Cowboys: 7-9-1, Commanders: 5-12, Giants: 4-13), the path to a back-to-back crown is highly secure."}
+            {"name": "Baltimore Ravens", "type": "division", "division": "AFC North", "target": "1st place in AFC North", "2025_result": "8-9 Regular Season Record", "playoffs": "Missed Playoffs", "place": "2nd in AFC North", 
+             "narrative": "The Ravens field the most multi-dimensional run offense in modern football history. To surpass their 2025 record of **8-9** (2nd in AFC North, missed playoffs) and win the division, Todd Monken must maximize dynamic schematics and leverage Baltimore's elite defensive efficiency to grind out AFC North wins over high-variance rivals."},
+            {"name": "Philadelphia Eagles", "type": "division", "division": "NFC East", "target": "1st place in NFC East", "2025_result": "11-6 Regular Season Record", "playoffs": "Made Playoffs (Wild Card)", "place": "1st in NFC East",
+             "narrative": "The Eagles took the NFC East crown with an **11-6** record in 2025 (1st in NFC East, Wild Card exit). Philadelphia's front office maintains the most premium trenches in the division. With massive systemic advantages over transitional division rivals (Cowboys: 7-9-1, Commanders: 5-12, Giants: 4-13), the path to a back-to-back crown is highly secure."}
         ]
     },
     {
@@ -111,10 +111,10 @@ PARLAYS = [
         "wager": "$5.00",
         "payout": "$54.33",
         "legs": [
-            {"name": "Green Bay Packers", "type": "division", "division": "NFC North", "target": "1st place in NFC North", "2025_result": "9-7-1 Regular Season Record", 
-             "narrative": "Matt LaFleur’s creative offensive spacing completely unlocked the second half of the campaign, helping Green Bay secure a **9-7-1** wildcard finish in 2025. The Packers’ ascending collection of young playmakers represents the modern standard for offensive explosion, making them top favorites to knock off divisional rivals like the Bears (11-6), Lions (9-8), and Vikings (9-8)."},
-            {"name": "Jacksonville Jaguars", "type": "division", "division": "AFC South", "target": "1st place in AFC South", "2025_result": "13-4 Regular Season Record", 
-             "narrative": "Jacksonville dominated the AFC South in 2025 with an elite **13-4** record. With high-value draft capital reinforcing their defensive spacing and absolute stability inside their operational system, they possess the exact roster blueprint needed to keep the Texans (12-5), Colts (8-9), and Titans (3-14) at bay."}
+            {"name": "Green Bay Packers", "type": "division", "division": "NFC North", "target": "1st place in NFC North", "2025_result": "9-7-1 Regular Season Record", "playoffs": "Made Playoffs (Wild Card)", "place": "2nd in NFC North",
+             "narrative": "Matt LaFleur’s creative offensive spacing completely unlocked the second half of the campaign, helping Green Bay secure a **9-7-1** finish (2nd in NFC North, Wild Card exit) in 2025. The Packers’ ascending collection of young playmakers represents the modern standard for offensive explosion, making them top favorites to knock off divisional rivals like the Bears (11-6), Lions (9-8), and Vikings (9-8)."},
+            {"name": "Jacksonville Jaguars", "type": "division", "division": "AFC South", "target": "1st place in AFC South", "2025_result": "13-4 Regular Season Record", "playoffs": "Made Playoffs (Wild Card)", "place": "1st in AFC South",
+             "narrative": "Jacksonville dominated the AFC South in 2025 with an elite **13-4** record (1st in AFC South, Wild Card exit). With high-value draft capital reinforcing their defensive spacing and absolute stability inside their operational system, they possess the exact roster blueprint needed to keep the Texans (12-5), Colts (8-9), and Titans (3-14) at bay."}
         ]
     },
     {
@@ -123,18 +123,18 @@ PARLAYS = [
         "wager": "BONUS BET",
         "payout": "$166.35",
         "legs": [
-            {"name": "Green Bay Packers", "type": "playoff", "target": "Make Playoffs", "2025_result": "9-7-1 Regular Season Record", 
-             "narrative": "The Packers executed an elite developmental curve under Jordan Love to grab a wildcard spot in 2025 at **9-7-1**. This young, cheap, and highly talented roster is perfectly primed to retain a steady wildcard baseline at absolute minimum."},
-            {"name": "Buffalo Bills", "type": "playoff", "target": "Make Playoffs", "2025_result": "12-5 Regular Season Record", 
-             "narrative": "Buffalo cruised to a **12-5** record in 2025. As long as Josh Allen is under center, Buffalo’s baseline structural floor guarantees a deep post-season push. The highly efficient vertical scheme ensures a massive win-floor projection independent of roster turnover."},
-            {"name": "Kansas City Chiefs", "type": "playoff", "target": "Make Playoffs", "2025_result": "6-11 Regular Season Record", 
-             "narrative": "The standard metric lock of modern football analytics. Despite a transitional **6-11** rebuilding regular season in 2025, Andy Reid and Patrick Mahomes' structural playoff blueprint makes calculating anything less than a post-season ticket entirely mathematically invalid."},
-            {"name": "Baltimore Ravens", "type": "playoff", "target": "Make Playoffs", "2025_result": "8-9 Regular Season Record", 
-             "narrative": "Following an **8-9** run in 2025, the Ravens are built entirely on consistent regular-season defensive structures and continuous ground dominance. They possess a top-tier consistency floor that minimizes variable volatility and secures wildcard contention."},
-            {"name": "Los Angeles Rams", "type": "playoff", "target": "Make Playoffs", "2025_result": "12-5 Regular Season Record", 
-             "narrative": "McVay’s hyper-efficient zone schemes cruised to a strong **12-5** record in 2025. Matthew Stafford's structural processing skill set combined with high-percentage skill weapons locks in a very premium NFC playoff floor."},
-            {"name": "Philadelphia Eagles", "type": "playoff", "target": "Make Playoffs", "2025_result": "11-6 Regular Season Record", 
-             "narrative": "An **11-6** foundational output in 2025 underscores a highly premium roster footprint. Built around elite inside line frameworks and premium offensive weapon arrays, securing a consecutive post-season berth represents a clear baseline hurdle."}
+            {"name": "Green Bay Packers", "type": "playoff", "target": "Make Playoffs", "2025_result": "9-7-1 Regular Season Record", "playoffs": "Made Playoffs (Wild Card)", "place": "2nd in NFC North",
+             "narrative": "The Packers executed an elite developmental curve under Jordan Love to grab a wildcard spot in 2025 at **9-7-1** (2nd in division). This young, cheap, and highly talented roster is perfectly primed to retain a steady wildcard baseline at absolute minimum."},
+            {"name": "Buffalo Bills", "type": "playoff", "target": "Make Playoffs", "2025_result": "12-5 Regular Season Record", "playoffs": "Made Playoffs (Divisional Round)", "place": "2nd in AFC East",
+             "narrative": "Buffalo cruised to a **12-5** record in 2025 (2nd in division, reached Divisional Round). As long as Josh Allen is under center, Buffalo’s baseline structural floor guarantees a deep post-season push. The highly efficient vertical scheme ensures a massive win-floor projection independent of roster turnover."},
+            {"name": "Kansas City Chiefs", "type": "playoff", "target": "Make Playoffs", "2025_result": "6-11 Regular Season Record", "playoffs": "Missed Playoffs", "place": "3rd in AFC West",
+             "narrative": "The standard metric lock of modern football analytics. Despite a transitional **6-11** rebuilding regular season in 2025 (3rd in division, missed playoffs), Andy Reid and Patrick Mahomes' structural playoff blueprint makes calculating anything less than a post-season ticket entirely mathematically invalid."},
+            {"name": "Baltimore Ravens", "type": "playoff", "target": "Make Playoffs", "2025_result": "8-9 Regular Season Record", "playoffs": "Missed Playoffs", "place": "2nd in AFC North",
+             "narrative": "Following an **8-9** run in 2025 (2nd in division, missed playoffs), the Ravens are built entirely on consistent regular-season defensive structures and continuous ground dominance. They possess a top-tier consistency floor that minimizes variable volatility and secures wildcard contention."},
+            {"name": "Los Angeles Rams", "type": "playoff", "target": "Make Playoffs", "2025_result": "12-5 Regular Season Record", "playoffs": "Made Playoffs (Conference Championship)", "place": "2nd in NFC West",
+             "narrative": "McVay’s hyper-efficient zone schemes cruised to a strong **12-5** record in 2025 (2nd in division, reached NFC Championship). Matthew Stafford's structural processing skill set combined with high-percentage skill weapons locks in a very premium NFC playoff floor."},
+            {"name": "Philadelphia Eagles", "type": "playoff", "target": "Make Playoffs", "2025_result": "11-6 Regular Season Record", "playoffs": "Made Playoffs (Wild Card)", "place": "1st in NFC East",
+             "narrative": "An **11-6** foundational output in 2025 (1st in division, Wild Card exit) underscores a highly premium roster footprint. Built around elite inside line frameworks and premium offensive weapon arrays, securing a consecutive post-season berth represents a clear baseline hurdle."}
         ]
     }
 ]
@@ -195,12 +195,17 @@ if "2025" in VIEW_MODE:
                     diff = leg['line'] - display_val
                     st.metric(label="Target Variance vs '25", value=f"{'+' if diff > 0 else ''}{diff:,.1f}")
             else:
-                c1, c2 = st.columns(2)
+                c1, c2, c3 = st.columns(3)
                 with c1:
-                    target_label = f"Objective: {leg['target']}" if leg['type'] == 'division' else f"Target Objective: {leg['target']}"
+                    target_label = f"Objective: {leg['target']}" if leg['type'] == 'division' else f"Target: {leg['target']}"
                     st.markdown(f"**{target_label}**")
                 with c2:
-                    st.markdown(f"**2025 Structural Context:** `{leg['2025_result']}`")
+                    st.markdown(f"**2025 Div Finish:** `{leg['place']}`")
+                with c3:
+                    st.markdown(f"**2025 Postseason:** `{leg['playoffs']}`")
+                    
+                # Small subheader showing the combined historic metric
+                st.caption(f"2025 Baseline context: {leg['2025_result']} | {leg['place']} | {leg['playoffs']}")
             
             st.markdown(leg['narrative'])
             st.markdown("---")
