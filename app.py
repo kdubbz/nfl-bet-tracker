@@ -38,6 +38,19 @@ VIEW_MODE = st.radio(
     help="Toggle between historical research/projections and live 2026 tracking."
 )
 
+# --- STAT LABEL HELPER ---
+# Converts raw API stat names into clean, readable display titles
+def get_stat_label(stat_key):
+    mapping = {
+        "passing_yards": "Passing Yards",
+        "rushing_yards": "Rushing Yards",
+        "receiving_yards": "Receiving Yards",
+        "passing_touchdowns": "Passing TDs",
+        "rushing_touchdowns": "Rushing TDs",
+        "receiving_touchdowns": "Receiving TDs"
+    }
+    return mapping.get(stat_key, "Units")
+
 # --- PORTFOLIO DEFINITIONS ---
 PARLAYS = [
     {
@@ -164,9 +177,10 @@ if "2025" in VIEW_MODE:
             st.markdown(f"#### 🎯 {leg['name']}")
             
             if leg['type'] == 'player':
+                stat_name = get_stat_label(leg['stat'])
                 c1, c2, c3 = st.columns(3)
                 with c1:
-                    st.metric(label="2026 Target Line", value=f"{leg['line']:,}")
+                    st.metric(label=f"2026 Target ({stat_name})", value=f"{leg['line']:,}")
                 with c2:
                     db_name = leg['db_name'].replace(" ", "")
                     api_stat = 0
@@ -176,7 +190,7 @@ if "2025" in VIEW_MODE:
                             api_stat = player_data[leg['stat']].sum()
                     
                     display_val = api_stat if api_stat > 0 else leg['2025_actual']
-                    st.metric(label="2025 Baseline", value=f"{display_val:,.0f}")
+                    st.metric(label=f"2025 {stat_name}", value=f"{display_val:,.0f}")
                 with c3:
                     diff = leg['line'] - display_val
                     st.metric(label="Target Variance vs '25", value=f"{'+' if diff > 0 else ''}{diff:,.1f}")
@@ -218,15 +232,16 @@ else:
                         current_total = player_data[leg['stat']].sum()
                 
                 pct_complete = min(float(current_total / leg['line']), 1.0) if leg['line'] > 0 else 0.0
+                stat_name = get_stat_label(leg['stat'])
                 
-                # Single metrics row displaying only Current Progress vs Goal
+                # Single metrics row displaying only Current Progress vs Goal with precise context
                 c1, c2 = st.columns(2)
                 with c1:
-                    st.metric(label="Current 2026 Total", value=f"{current_total:,.1f}")
+                    st.metric(label=f"Current {stat_name}", value=f"{current_total:,.1f}")
                 with c2:
-                    st.metric(label="Goal Line", value=f"{leg['line']:,}")
+                    st.metric(label=f"Goal {stat_name}", value=f"{leg['line']:,}")
                     
-                st.progress(pct_complete, text=f"{pct_complete*100:.1f}% Completed")
+                st.progress(pct_complete, text=f"{pct_complete*100:.1f}% of {stat_name} Completed")
             
             else:
                 c1, c2 = st.columns([2, 1])
