@@ -6,7 +6,6 @@ import nflreadpy as nfl
 st.set_page_config(page_title="NFL Bet Portfolio", layout="centered")
 
 # --- CUSTOM CSS FOR MODERN BORDERS ---
-# This injects a high-end glowing border style to make your parlay container pop
 st.html("""
 <style>
 .st-key-parlay-card {
@@ -39,7 +38,6 @@ VIEW_MODE = st.radio(
 )
 
 # --- STAT LABEL HELPER ---
-# Converts raw API stat names into clean, readable display titles
 def get_stat_label(stat_key):
     mapping = {
         "passing_yards": "Passing Yards",
@@ -151,11 +149,9 @@ def next_slide():
     if st.session_state.parlay_index < len(PARLAYS) - 1:
         st.session_state.parlay_index += 1
 
-# Extract currently selected parlay based on scroll state
 idx = st.session_state.parlay_index
 current_parlay = PARLAYS[idx]
 
-# Load API stats dataframe
 stats_df = load_nfl_data(2025 if "2025" in VIEW_MODE else 2026)
 
 # =========================================================
@@ -195,17 +191,9 @@ if "2025" in VIEW_MODE:
                     diff = leg['line'] - display_val
                     st.metric(label="Target Variance vs '25", value=f"{'+' if diff > 0 else ''}{diff:,.1f}")
             else:
-                c1, c2, c3 = st.columns(3)
-                with c1:
-                    target_label = f"Objective: {leg['target']}" if leg['type'] == 'division' else f"Target: {leg['target']}"
-                    st.markdown(f"**{target_label}**")
-                with c2:
-                    st.markdown(f"**2025 Div Finish:** `{leg['place']}`")
-                with c3:
-                    st.markdown(f"**2025 Postseason:** `{leg['playoffs']}`")
-                    
-                # Small subheader showing the combined historic metric
-                st.caption(f"2025 Baseline context: {leg['2025_result']} | {leg['place']} | {leg['playoffs']}")
+                target_label = f"Objective: **{leg['target']}**" if leg['type'] == 'division' else f"Target: **{leg['target']}**"
+                st.markdown(target_label)
+                st.markdown(f"**2025 Baseline context:** {leg['2025_result']} | {leg['place']} | {leg['playoffs']}")
             
             st.markdown(leg['narrative'])
             st.markdown("---")
@@ -240,7 +228,6 @@ else:
                 pct_complete = min(float(current_total / leg['line']), 1.0) if leg['line'] > 0 else 0.0
                 stat_name = get_stat_label(leg['stat'])
                 
-                # Metrics layout
                 c1, c2 = st.columns(2)
                 with c1:
                     st.metric(label=f"Current {stat_name}", value=f"{current_total:,.1f}")
@@ -261,7 +248,6 @@ else:
 
 # --- DYNAMIC BOTTOM NAVIGATION ---
 st.write("---")
-# Build column space depending on if buttons should be hidden
 if idx == 0:
     col_prev, col_indicator, col_next = st.columns([1, 2, 1])
     with col_indicator:
