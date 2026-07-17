@@ -213,4 +213,4 @@ else:
                         st.markdown(f"🎯 Objective: **{leg.get('target', 'Win Division')}**")
                     with c2:
                         st.markdown("Status: `Pending` ⏳")
-                st.markdown("<br>", unsafe_allowed_html=True)
+                st.markdown("<br>", unsafe_allow_html=True)
