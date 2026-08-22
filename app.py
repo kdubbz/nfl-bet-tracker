@@ -8,49 +8,56 @@ st.set_page_config(
     page_title="NFL Bet Portfolio", page_icon="🏈", layout="wide"
 )
 
-# Custom CSS for UI polish and dark-mode accent highlights
+# Custom CSS for UI polish, neon accents, and responsive card grids
 st.markdown(
     """
     <style>
-    /* Global Background and Accent Glows */
     .stApp {
         background-color: #0e1117;
         color: #e0e0e0;
     }
     
-    /* Header Accent Bar */
     h1, h2, h3 {
         color: #00e676 !important;
         font-family: 'Trebuchet MS', sans-serif;
     }
 
-    /* Custom Bet Cards */
-    .bet-card {
+    /* Bet Container Styling */
+    .parlay-card {
         background-color: #1a1f2c;
         border: 1px solid #2d3748;
-        border-radius: 10px;
-        padding: 15px;
-        margin-bottom: 12px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        border-radius: 12px;
+        padding: 18px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.4);
     }
-    
-    .bet-card-header {
+
+    .bet-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background-color: #121621;
+        border-left: 4px solid #00e676;
+        padding: 10px 14px;
+        border-radius: 8px;
+        margin-top: 8px;
+    }
+
+    .bet-info {
         display: flex;
         align-items: center;
         gap: 12px;
-        margin-bottom: 8px;
     }
-    
-    .bet-card-img {
-        width: 45px;
-        height: 45px;
+
+    .bet-img {
+        width: 42px;
+        height: 42px;
         object-fit: contain;
         border-radius: 50%;
         background-color: #2a3245;
-        padding: 3px;
+        padding: 2px;
     }
 
-    /* Custom Metric Accent Cards */
     div[data-testid="stMetricValue"] {
         color: #00e676 !important;
         font-weight: bold;
@@ -60,8 +67,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Dynamic asset URL functions
-# ESPN's public static endpoints provide crisp PNGs for team logos and player headshots
+# Image Asset Helpers
 TEAM_LOGOS = {
     "DEN": "https://a.espncdn.com/i/teamlogos/nfl/500/den.png",
     "GB": "https://a.espncdn.com/i/teamlogos/nfl/500/gb.png",
@@ -69,6 +75,12 @@ TEAM_LOGOS = {
     "PHI": "https://a.espncdn.com/i/teamlogos/nfl/500/phi.png",
     "SF": "https://a.espncdn.com/i/teamlogos/nfl/500/sf.png",
     "SEA": "https://a.espncdn.com/i/teamlogos/nfl/500/sea.png",
+    "DET": "https://a.espncdn.com/i/teamlogos/nfl/500/det.png",
+    "HOU": "https://a.espncdn.com/i/teamlogos/nfl/500/hou.png",
+    "BAL": "https://a.espncdn.com/i/teamlogos/nfl/500/bal.png",
+    "BUF": "https://a.espncdn.com/i/teamlogos/nfl/500/buf.png",
+    "MIA": "https://a.espncdn.com/i/teamlogos/nfl/500/mia.png",
+    "CIN": "https://a.espncdn.com/i/teamlogos/nfl/500/cin.png",
 }
 
 
@@ -76,459 +88,183 @@ def get_player_headshot_url(player_id):
     return f"https://a.espncdn.com/i/headshots/nfl/players/full/{player_id}.png"
 
 
-# Helper Functions to Render Styled Bet Cards
-def render_team_bet(team_code, team_name, bet_desc, odds, wager):
-    logo_url = TEAM_LOGOS.get(
+# Component Builders
+def render_team_leg(team_code, team_name, detail):
+    logo = TEAM_LOGOS.get(
         team_code, "https://a.espncdn.com/i/teamlogos/nfl/500/nfl.png"
     )
-    st.markdown(
-        f"""
-    <div class="bet-card">
-        <div class="bet-card-header">
-            <img src="{logo_url}" class="bet-card-img"/>
+    return f"""
+    <div class="bet-row">
+        <div class="bet-info">
+            <img src="{logo}" class="bet-img"/>
             <div>
-                <strong style="font-size: 1.1em; color: #ffffff;">{team_name}</strong><br/>
-                <span style="color: #a0aec0; font-size: 0.9em;">{bet_desc}</span>
+                <strong style="color: #ffffff;">{team_name}</strong><br/>
+                <span style="color: #a0aec0; font-size: 0.85em;">{detail}</span>
             </div>
         </div>
-        <div style="display: flex; justify-content: space-between; margin-top: 5px; font-size: 0.95em;">
-            <span>Odds: <strong>{odds}</strong></span>
-            <span>Wager: <strong style="color: #00e676;">${wager}</strong></span>
-        </div>
+        <span style="color: #00e676; font-weight: bold;">Leg Active</span>
     </div>
-    """,
-        unsafe_allow_html=True,
-    )
+    """
 
 
-def render_player_bet(player_name, espn_id, prop_desc, odds, wager):
-    photo_url = get_player_headshot_url(espn_id)
-    st.markdown(
-        f"""
-    <div class="bet-card">
-        <div class="bet-card-header">
-            <img src="{photo_url}" class="bet-card-img"/>
+def render_player_leg(player_name, espn_id, detail):
+    photo = get_player_headshot_url(espn_id)
+    return f"""
+    <div class="bet-row">
+        <div class="bet-info">
+            <img src="{photo}" class="bet-img"/>
             <div>
-                <strong style="font-size: 1.1em; color: #ffffff;">{player_name}</strong><br/>
-                <span style="color: #a0aec0; font-size: 0.9em;">{prop_desc}</span>
+                <strong style="color: #ffffff;">{player_name}</strong><br/>
+                <span style="color: #a0aec0; font-size: 0.85em;">{detail}</span>
             </div>
         </div>
-        <div style="display: flex; justify-content: space-between; margin-top: 5px; font-size: 0.95em;">
-            <span>Odds: <strong>{odds}</strong></span>
-            <span>Wager: <strong style="color: #00e676;">${wager}</strong></span>
-        </div>
+        <span style="color: #00e676; font-weight: bold;">Leg Active</span>
     </div>
-    """,
-        unsafe_allow_html=True,
-    )
+    """
 
+
+# Standings Dataset
+standings_2025_data = [
+    {"Division": "AFC West", "Team": "Denver Broncos", "W": 14, "L": 3, "PCT": 0.824, "Playoff": "Div Champ"},
+    {"Division": "AFC West", "Team": "Los Angeles Chargers", "W": 11, "L": 6, "PCT": 0.647, "Playoff": "Wild Card"},
+    {"Division": "AFC West", "Team": "Kansas City Chiefs", "W": 6, "L": 11, "PCT": 0.353, "Playoff": "-"},
+    {"Division": "AFC West", "Team": "Las Vegas Raiders", "W": 3, "L": 14, "PCT": 0.176, "Playoff": "-"},
+    {"Division": "NFC North", "Team": "Chicago Bears", "W": 11, "L": 6, "PCT": 0.647, "Playoff": "Div Champ"},
+    {"Division": "NFC North", "Team": "Green Bay Packers", "W": 9, "L": 7, "PCT": 0.559, "Playoff": "Wild Card"},
+    {"Division": "NFC North", "Team": "Minnesota Vikings", "W": 9, "L": 8, "PCT": 0.529, "Playoff": "-"},
+    {"Division": "NFC North", "Team": "Detroit Lions", "W": 9, "L": 8, "PCT": 0.529, "Playoff": "-"},
+    {"Division": "NFC West", "Team": "Seattle Seahawks", "W": 14, "L": 3, "PCT": 0.824, "Playoff": "Div Champ"},
+    {"Division": "NFC West", "Team": "Los Angeles Rams", "W": 12, "L": 5, "PCT": 0.706, "Playoff": "Wild Card"},
+    {"Division": "NFC West", "Team": "San Francisco 49ers", "W": 12, "L": 5, "PCT": 0.706, "Playoff": "Wild Card"},
+    {"Division": "NFC West", "Team": "Arizona Cardinals", "W": 3, "L": 14, "PCT": 0.176, "Playoff": "-"},
+    {"Division": "AFC East", "Team": "New England Patriots", "W": 14, "L": 3, "PCT": 0.824, "Playoff": "Div Champ"},
+    {"Division": "AFC East", "Team": "Buffalo Bills", "W": 12, "L": 5, "PCT": 0.706, "Playoff": "Wild Card"},
+    {"Division": "AFC East", "Team": "Miami Dolphins", "W": 7, "L": 10, "PCT": 0.412, "Playoff": "-"},
+    {"Division": "AFC East", "Team": "New York Jets", "W": 3, "L": 14, "PCT": 0.176, "Playoff": "-"},
+]
+df_standings = pd.DataFrame(standings_2025_data)
 
 # ==========================================
-# 2. MAIN APP & TABS
+# 2. APP INTERFACE
 # ==========================================
-st.title("🏈 NFL Bet Portfolio Dashboard")
+st.title("🏈 NFL Bet Portfolio & Tracker")
 
-tab_portfolio, tab_2025 = st.tabs(["Active Portfolio", "2025 Standings"])
+tab_parlays, tab_props, tab_full_standings = st.tabs(
+    ["Team Parlays & Context", "Player Prop Trackers", "Full Standings Grid"]
+)
 
-# --- TAB 1: ACTIVE PORTFOLIO WITH LOGOS & HEADSHOTS ---
-with tab_portfolio:
-    st.header("Active Wagers & Prop Builder")
+# --- TAB 1: TEAM BETS SIDE-BY-SIDE WITH DIVISION STANDINGS ---
+with tab_parlays:
+    st.header("Team Bets & Live Division Context")
+    st.caption("Side-by-side view of active team wagers alongside their current divisional race.")
 
-    col1, col2 = st.columns(2)
+    # PARLAY 1: PLAYOFFS OR BUST
+    st.markdown("### 🎯 Parlay 1: Playoffs or Bust (+450)")
+    col_bets1, col_stand1 = st.columns([1.1, 0.9])
 
-    with col1:
-        st.subheader("Team Bets")
-        render_team_bet("DEN", "Denver Broncos", "Moneyline vs. KC", "-120", 50)
-        render_team_bet(
-            "GB", "Green Bay Packers", "Spread -3.5 vs. CHI", "-110", 100
+    with col_bets1:
+        st.markdown(
+            '<div class="parlay-card">'
+            + render_team_leg("DEN", "Denver Broncos", "To Make the Playoffs")
+            + render_team_leg("GB", "Green Bay Packers", "To Make the Playoffs")
+            + render_team_leg("MIA", "Miami Dolphins", "To Make the Playoffs")
+            + "</div>",
+            unsafe_allow_html=True,
         )
 
-    with col2:
-        st.subheader("Player Props")
-        # Example using Patrick Mahomes (ESPN ID: 3139477)
-        render_player_bet(
-            "Patrick Mahomes", 3139477, "Over 265.5 Passing Yards", "-115", 75
-        )
-        # Example using Christian McCaffrey (ESPN ID: 3042519)
-        render_player_bet(
-            "Christian McCaffrey",
-            3042519,
-            "Anytime Touchdown Scorer",
-            "-140",
-            80,
+    with col_stand1:
+        st.subheader("Division Context")
+        sub_df1 = df_standings[
+            df_standings["Division"].isin(["AFC West", "NFC North", "AFC East"])
+        ]
+        st.dataframe(
+            sub_df1,
+            hide_index=True,
+            use_container_width=True,
+            column_config={"PCT": st.column_config.NumberColumn(format="%.3f")},
         )
 
-# --- TAB 2: 2025 STANDINGS TAB ---
-with tab_2025:
-    st.header("2025 Regular Season Standings")
+    st.markdown("---")
 
-    standings_2025_data = [
-        # AFC East
-        {
-            "Conference": "AFC",
-            "Division": "AFC East",
-            "Team": "New England Patriots",
-            "W": 14,
-            "L": 3,
-            "T": 0,
-            "PCT": 0.824,
-            "Playoff": "Division Champion (1)",
-        },
-        {
-            "Conference": "AFC",
-            "Division": "AFC East",
-            "Team": "Buffalo Bills",
-            "W": 12,
-            "L": 5,
-            "T": 0,
-            "PCT": 0.706,
-            "Playoff": "Wild Card",
-        },
-        {
-            "Conference": "AFC",
-            "Division": "AFC East",
-            "Team": "Miami Dolphins",
-            "W": 7,
-            "L": 10,
-            "T": 0,
-            "PCT": 0.412,
-            "Playoff": "-",
-        },
-        {
-            "Conference": "AFC",
-            "Division": "AFC East",
-            "Team": "New York Jets",
-            "W": 3,
-            "L": 14,
-            "T": 0,
-            "PCT": 0.176,
-            "Playoff": "-",
-        },
-        # AFC North
-        {
-            "Conference": "AFC",
-            "Division": "AFC North",
-            "Team": "Pittsburgh Steelers",
-            "W": 10,
-            "L": 7,
-            "T": 0,
-            "PCT": 0.588,
-            "Playoff": "Division Champion",
-        },
-        {
-            "Conference": "AFC",
-            "Division": "AFC North",
-            "Team": "Baltimore Ravens",
-            "W": 8,
-            "L": 9,
-            "T": 0,
-            "PCT": 0.471,
-            "Playoff": "-",
-        },
-        {
-            "Conference": "AFC",
-            "Division": "AFC North",
-            "Team": "Cincinnati Bengals",
-            "W": 6,
-            "L": 11,
-            "T": 0,
-            "PCT": 0.353,
-            "Playoff": "-",
-        },
-        {
-            "Conference": "AFC",
-            "Division": "AFC North",
-            "Team": "Cleveland Browns",
-            "W": 5,
-            "L": 12,
-            "T": 0,
-            "PCT": 0.294,
-            "Playoff": "-",
-        },
-        # AFC South
-        {
-            "Conference": "AFC",
-            "Division": "AFC South",
-            "Team": "Jacksonville Jaguars",
-            "W": 13,
-            "L": 4,
-            "T": 0,
-            "PCT": 0.765,
-            "Playoff": "Division Champion",
-        },
-        {
-            "Conference": "AFC",
-            "Division": "AFC South",
-            "Team": "Houston Texans",
-            "W": 12,
-            "L": 5,
-            "T": 0,
-            "PCT": 0.706,
-            "Playoff": "Wild Card",
-        },
-        {
-            "Conference": "AFC",
-            "Division": "AFC South",
-            "Team": "Indianapolis Colts",
-            "W": 8,
-            "L": 9,
-            "T": 0,
-            "PCT": 0.471,
-            "Playoff": "-",
-        },
-        {
-            "Conference": "AFC",
-            "Division": "AFC South",
-            "Team": "Tennessee Titans",
-            "W": 3,
-            "L": 14,
-            "T": 0,
-            "PCT": 0.176,
-            "Playoff": "-",
-        },
-        # AFC West
-        {
-            "Conference": "AFC",
-            "Division": "AFC West",
-            "Team": "Denver Broncos",
-            "W": 14,
-            "L": 3,
-            "T": 0,
-            "PCT": 0.824,
-            "Playoff": "Division Champion",
-        },
-        {
-            "Conference": "AFC",
-            "Division": "AFC West",
-            "Team": "Los Angeles Chargers",
-            "W": 11,
-            "L": 6,
-            "T": 0,
-            "PCT": 0.647,
-            "Playoff": "Wild Card",
-        },
-        {
-            "Conference": "AFC",
-            "Division": "AFC West",
-            "Team": "Kansas City Chiefs",
-            "W": 6,
-            "L": 11,
-            "T": 0,
-            "PCT": 0.353,
-            "Playoff": "-",
-        },
-        {
-            "Conference": "AFC",
-            "Division": "AFC West",
-            "Team": "Las Vegas Raiders",
-            "W": 3,
-            "L": 14,
-            "T": 0,
-            "PCT": 0.176,
-            "Playoff": "-",
-        },
-        # NFC East
-        {
-            "Conference": "NFC",
-            "Division": "NFC East",
-            "Team": "Philadelphia Eagles",
-            "W": 11,
-            "L": 6,
-            "T": 0,
-            "PCT": 0.647,
-            "Playoff": "Division Champion",
-        },
-        {
-            "Conference": "NFC",
-            "Division": "NFC East",
-            "Team": "Dallas Cowboys",
-            "W": 7,
-            "L": 9,
-            "T": 1,
-            "PCT": 0.441,
-            "Playoff": "-",
-        },
-        {
-            "Conference": "NFC",
-            "Division": "NFC East",
-            "Team": "Washington Commanders",
-            "W": 5,
-            "L": 12,
-            "T": 0,
-            "PCT": 0.294,
-            "Playoff": "-",
-        },
-        {
-            "Conference": "NFC",
-            "Division": "NFC East",
-            "Team": "New York Giants",
-            "W": 4,
-            "L": 13,
-            "T": 0,
-            "PCT": 0.235,
-            "Playoff": "-",
-        },
-        # NFC North
-        {
-            "Conference": "NFC",
-            "Division": "NFC North",
-            "Team": "Chicago Bears",
-            "W": 11,
-            "L": 6,
-            "T": 0,
-            "PCT": 0.647,
-            "Playoff": "Division Champion",
-        },
-        {
-            "Conference": "NFC",
-            "Division": "NFC North",
-            "Team": "Green Bay Packers",
-            "W": 9,
-            "L": 7,
-            "T": 1,
-            "PCT": 0.559,
-            "Playoff": "Wild Card",
-        },
-        {
-            "Conference": "NFC",
-            "Division": "NFC North",
-            "Team": "Minnesota Vikings",
-            "W": 9,
-            "L": 8,
-            "T": 0,
-            "PCT": 0.529,
-            "Playoff": "-",
-        },
-        {
-            "Conference": "NFC",
-            "Division": "NFC North",
-            "Team": "Detroit Lions",
-            "W": 9,
-            "L": 8,
-            "T": 0,
-            "PCT": 0.529,
-            "Playoff": "-",
-        },
-        # NFC South
-        {
-            "Conference": "NFC",
-            "Division": "NFC South",
-            "Team": "Carolina Panthers",
-            "W": 8,
-            "L": 9,
-            "T": 0,
-            "PCT": 0.471,
-            "Playoff": "Division Champion",
-        },
-        {
-            "Conference": "NFC",
-            "Division": "NFC South",
-            "Team": "Tampa Bay Buccaneers",
-            "W": 8,
-            "L": 9,
-            "T": 0,
-            "PCT": 0.471,
-            "Playoff": "-",
-        },
-        {
-            "Conference": "NFC",
-            "Division": "NFC South",
-            "Team": "Atlanta Falcons",
-            "W": 8,
-            "L": 9,
-            "T": 0,
-            "PCT": 0.471,
-            "Playoff": "-",
-        },
-        {
-            "Conference": "NFC",
-            "Division": "NFC South",
-            "Team": "New Orleans Saints",
-            "W": 6,
-            "L": 11,
-            "T": 0,
-            "PCT": 0.353,
-            "Playoff": "-",
-        },
-        # NFC West
-        {
-            "Conference": "NFC",
-            "Division": "NFC West",
-            "Team": "Seattle Seahawks",
-            "W": 14,
-            "L": 3,
-            "T": 0,
-            "PCT": 0.824,
-            "Playoff": "Division Champion (Super Bowl Champion)",
-        },
-        {
-            "Conference": "NFC",
-            "Division": "NFC West",
-            "Team": "Los Angeles Rams",
-            "W": 12,
-            "L": 5,
-            "T": 0,
-            "PCT": 0.706,
-            "Playoff": "Wild Card",
-        },
-        {
-            "Conference": "NFC",
-            "Division": "NFC West",
-            "Team": "San Francisco 49ers",
-            "W": 12,
-            "L": 5,
-            "T": 0,
-            "PCT": 0.706,
-            "Playoff": "Wild Card",
-        },
-        {
-            "Conference": "NFC",
-            "Division": "NFC West",
-            "Team": "Arizona Cardinals",
-            "W": 3,
-            "L": 14,
-            "T": 0,
-            "PCT": 0.176,
-            "Playoff": "-",
-        },
-    ]
+    # PARLAY 2: DIVISION WINNERS
+    st.markdown("### 🏆 Parlay 2: Division Champions (+1200)")
+    col_bets2, col_stand2 = st.columns([1.1, 0.9])
 
-    df_2025 = pd.DataFrame(standings_2025_data)
+    with col_bets2:
+        st.markdown(
+            '<div class="parlay-card">'
+            + render_team_leg("DET", "Detroit Lions", "Win NFC North")
+            + render_team_leg("BUF", "Buffalo Bills", "Win AFC East")
+            + render_team_leg("SF", "San Francisco 49ers", "Win NFC West")
+            + "</div>",
+            unsafe_allow_html=True,
+        )
 
-    conf_choice = st.radio(
-        "Select View:",
-        ["By Division", "AFC Overall", "NFC Overall"],
-        horizontal=True,
+    with col_stand2:
+        st.subheader("Division Context")
+        sub_df2 = df_standings[
+            df_standings["Division"].isin(["NFC North", "AFC East", "NFC West"])
+        ]
+        st.dataframe(
+            sub_df2,
+            hide_index=True,
+            use_container_width=True,
+            column_config={"PCT": st.column_config.NumberColumn(format="%.3f")},
+        )
+
+# --- TAB 2: PLAYER PROP TRACKERS WITH HEADSHOTS ---
+with tab_props:
+    st.header("Player Prop Parlays")
+
+    col_prop1, col_prop2 = st.columns(2)
+
+    with col_prop1:
+        st.markdown("### 📈 Parlay 3: Total Yards Over")
+        st.markdown(
+            '<div class="parlay-card">'
+            + render_player_leg("Patrick Mahomes", 3139477, "Over 4,250.5 Passing Yards")
+            + render_player_leg("Christian McCaffrey", 3042519, "Over 1,150.5 Rushing Yards")
+            + render_player_leg("Tyreek Hill", 3116365, "Over 1,250.5 Receiving Yards")
+            + "</div>",
+            unsafe_allow_html=True,
+        )
+
+        st.markdown("### ⚡ Parlay 5: Floor Multi-Prop")
+        st.markdown(
+            '<div class="parlay-card">'
+            + render_player_leg("Lamar Jackson", 3916387, "50+ Rushing Yards in 10+ Games")
+            + render_player_leg("Amon-Ra St. Brown", 4361522, "6+ Receptions in 12+ Games")
+            + "</div>",
+            unsafe_allow_html=True,
+        )
+
+    with col_prop2:
+        st.markdown("### 🏈 Parlay 4: TD Machines")
+        st.markdown(
+            '<div class="parlay-card">'
+            + render_player_leg("Derrick Henry", 3043078, "12+ Total Touchdowns")
+            + render_player_leg("Travis Kelce", 15847, "8+ Receiving Touchdowns")
+            + render_player_leg("Ja'Marr Chase", 4362628, "10+ Receiving Touchdowns")
+            + "</div>",
+            unsafe_allow_html=True,
+        )
+
+        st.markdown("### 🎯 Parlay 6: Longshot Milestones")
+        st.markdown(
+            '<div class="parlay-card">'
+            + render_player_leg("Josh Allen", 3918298, "4,000+ Pass Yds / 35+ Total TDs")
+            + render_player_leg("CeeDee Lamb", 4426515, "1,400+ Receiving Yards")
+            + "</div>",
+            unsafe_allow_html=True,
+        )
+
+# --- TAB 3: FULL STANDINGS GRID ---
+with tab_full_standings:
+    st.header("Overall 2025 Standings")
+    st.dataframe(
+        df_standings,
+        hide_index=True,
+        use_container_width=True,
+        column_config={"PCT": st.column_config.NumberColumn(format="%.3f")},
     )
-
-    if conf_choice == "By Division":
-        col1, col2 = st.columns(2)
-
-        with col1:
-            st.subheader("AFC Standings")
-            for div in ["AFC East", "AFC North", "AFC South", "AFC West"]:
-                st.write(f"**{div}**")
-                sub_df = df_2025[df_2025["Division"] == div][
-                    ["Team", "W", "L", "T", "PCT", "Playoff"]
-                ]
-                st.dataframe(
-                    sub_df,
-                    hide_index=True,
-                    use_container_width=True,
-                    column_config={"PCT": st.column_config.NumberColumn(format="%.3f")},
-                )
-
-        with col2:
-            st.subheader("NFC Standings")
-            for div in ["NFC East", "NFC North", "NFC South", "NFC West"]:
-                st.write(f"**{div}**")
-                sub_df = df_2025[df_2025["Division"] == div][
-                    ["Team", "W", "L", "T", "PCT", "Playoff"]
-                ]
-                st.dataframe(
-                    sub_df,
-                    hide_index=True,
-                    use_container_width=True,
-                    column_config={"PCT": st.column_config.NumberColumn(format="%.3f")},
-                )
-                
+    
