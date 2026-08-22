@@ -27,12 +27,57 @@ st.html("""
 
 # --- DATA FETCHING ---
 @st.cache_data(ttl=86400)
-def load_nfl_data(year):
+def load_nfl_player_stats(year):
     try:
         raw_stats = nfl.load_player_stats([year])
         return raw_stats.to_pandas()
     except Exception:
         return pd.DataFrame()
+
+@st.cache_data(ttl=86400)
+def load_nfl_standings(year):
+    """Computes live division standings from schedule data."""
+    try:
+        schedules = nfl.load_schedules([year]).to_pandas()
+        # Filter for completed regular season games
+        completed = schedules[(schedules['game_type'] == 'REG') & (schedules['result'].notna())]
+        
+        teams = {}
+        for _, game in completed.iterrows():
+            home, away = game['home_team'], game['away_team']
+            h_score, a_score = game['home_score'], game['away_score']
+            
+            for t in [home, away]:
+                if t not in teams:
+                    teams[t] = {'W': 0, 'L': 0, 'T': 0}
+            
+            if h_score > a_score:
+                teams[home]['W'] += 1
+                teams[away]['L'] += 1
+            elif a_score > h_score:
+                teams[away]['W'] += 1
+                teams[home]['L'] += 1
+            else:
+                teams[home]['T'] += 1
+                teams[away]['T'] += 1
+                
+        df = pd.DataFrame.from_dict(teams, orient='index').reset_index()
+        df.rename(columns={'index': 'Team'}, inplace=True)
+        return df
+    except Exception:
+        return pd.DataFrame()
+
+# Static Mapping of Division Rosters
+DIVISION_MAP = {
+    "AFC North": ["BAL", "CIN", "CLE", "PIT"],
+    "NFC East": ["DAL", "NYG", "PHI", "WAS"],
+    "NFC North": ["CHI", "DET", "GB", "MIN"],
+    "AFC South": ["HOU", "IND", "JAX", "TEN"],
+    "AFC East": ["BUF", "MIA", "NE", "NYJ"],
+    "AFC West": ["DEN", "KC", "LV", "LAC"],
+    "NFC South": ["ATL", "CAR", "NO", "TB"],
+    "NFC West": ["ARI", "LA", "SF", "SEA"]
+}
 
 # --- TITLE ---
 st.title("🏈 NFL Bet Portfolio")
@@ -123,8 +168,8 @@ PARLAYS = [
         "wager": "$10.00",
         "payout": "$40.19",
         "legs": [
-            {"name": "Baltimore Ravens", "type": "division", "target": "1st place in AFC North", "2025_result": "8-9", "place": "2nd", "playoffs": "Missed", "narrative": "Requires 1st place finish in AFC North."},
-            {"name": "Philadelphia Eagles", "type": "division", "target": "1st place in NFC East", "2025_result": "11-6", "place": "1st", "playoffs": "Made", "narrative": "Requires 1st place finish in NFC East."}
+            {"name": "Baltimore Ravens", "type": "division", "division": "AFC North", "target": "1st place in AFC North", "2025_result": "8-9", "place": "2nd", "playoffs": "Missed", "narrative": "Requires 1st place finish in AFC North."},
+            {"name": "Philadelphia Eagles", "type": "division", "division": "NFC East", "target": "1st place in NFC East", "2025_result": "11-6", "place": "1st", "playoffs": "Made", "narrative": "Requires 1st place finish in NFC East."}
         ]
     },
     {
@@ -133,8 +178,8 @@ PARLAYS = [
         "wager": "$5.00",
         "payout": "$54.33",
         "legs": [
-            {"name": "Green Bay Packers", "type": "division", "target": "1st place in NFC North", "2025_result": "9-7-1", "place": "2nd", "playoffs": "Made", "narrative": "Requires 1st place finish in NFC North."},
-            {"name": "Jacksonville Jaguars", "type": "division", "target": "1st place in AFC South", "2025_result": "13-4", "place": "1st", "playoffs": "Made", "narrative": "Requires 1st place finish in AFC South."}
+            {"name": "Green Bay Packers", "type": "division", "division": "NFC North", "target": "1st place in NFC North", "2025_result": "9-7-1", "place": "2nd", "playoffs": "Made", "narrative": "Requires 1st place finish in NFC North."},
+            {"name": "Jacksonville Jaguars", "type": "division", "division": "AFC South", "target": "1st place in AFC South", "2025_result": "13-4", "place": "1st", "playoffs": "Made", "narrative": "Requires 1st place finish in AFC South."}
         ]
     },
     {
@@ -167,7 +212,9 @@ def next_slide():
 
 idx = st.session_state.parlay_index
 current_parlay = PARLAYS[idx]
-stats_df = load_nfl_data(2025 if "2025" in VIEW_MODE else 2026)
+active_year = 2025 if "2025" in VIEW_MODE else 2026
+stats_df = load_nfl_player_stats(active_year)
+standings_df = load_nfl_standings(active_year)
 
 # =========================================================
 # 🔬 VIEW 1: 2025 RESEARCH & BASELINES
@@ -189,7 +236,6 @@ if "2025" in VIEW_MODE:
             
             if leg['type'] == 'player':
                 stat_name = get_stat_label(leg['stat'])
-                
                 c1, c2, c3 = st.columns(3)
                 with c1:
                     st.metric(label=f"2026 Target ({stat_name})", value=f"{leg['line']:,}")
@@ -246,7 +292,6 @@ else:
                         elif 'week' in player_data.columns:
                             games_played = int(player_data['week'].nunique())
 
-                # Strict check specifically targeting the TD parlay ID (2) or any touchdown stat key
                 is_td_leg = current_parlay['id'] == 2 or "touchdown" in leg['stat'] or leg['stat'].endswith("_tds")
 
                 units_remaining = max(0.0, leg['line'] - current_total)
@@ -256,7 +301,6 @@ else:
                 pct_complete = min(float(current_total / leg['line']), 1.0) if leg['line'] > 0 else 0.0
                 stat_name = get_stat_label(leg['stat'])
                 
-                # Metrics layout
                 c1, c2, c3 = st.columns(3)
                 with c1:
                     st.metric(label=f"Current {stat_name}", value=f"{current_total:,.0f}" if is_td_leg else f"{current_total:,.1f}")
@@ -264,27 +308,43 @@ else:
                     st.metric(label=f"Goal {stat_name}", value=f"{leg['line']:,}")
                 with c3:
                     if is_td_leg:
-                        st.metric(
-                            label="TDs Remaining", 
-                            value=f"{units_remaining:,.1f}", 
-                            delta=f"{games_remaining} games left"
-                        )
+                        st.metric(label="TDs Remaining", value=f"{units_remaining:,.1f}", delta=f"{games_remaining} games left")
                     else:
-                        st.metric(
-                            label="Needed / Game", 
-                            value=f"{needed_per_game:.1f}", 
-                            delta=f"{games_remaining} games left"
-                        )
+                        st.metric(label="Needed / Game", value=f"{needed_per_game:.1f}", delta=f"{games_remaining} games left")
                 
-                # Progress Bar display
                 progress_label = f"{pct_complete*100:.1f}% Completed ({units_remaining:,.1f} {stat_name.lower()} remaining)"
                 st.progress(pct_complete, text=progress_label)
             
-            else:
+            elif leg['type'] == 'division':
+                st.markdown(f"**Objective:** {leg['target']}")
+                
+                div_name = leg.get('division')
+                if div_name and div_name in DIVISION_MAP:
+                    div_teams = DIVISION_MAP[div_name]
+                    
+                    if not standings_df.empty:
+                        div_standings = standings_df[standings_df['Team'].isin(div_teams)].copy()
+                        div_standings['PCT'] = div_standings.apply(
+                            lambda r: (r['W'] + 0.5 * r['T']) / max(1, r['W'] + r['L'] + r['T']), axis=1
+                        )
+                        div_standings = div_standings.sort_values(by=['PCT', 'W'], ascending=False).reset_index(drop=True)
+                        div_standings['Pos'] = range(1, len(div_standings) + 1)
+                        
+                        st.caption(f"🏆 Live Standings — {div_name}")
+                        st.dataframe(
+                            div_standings[['Pos', 'Team', 'W', 'L', 'T']],
+                            hide_index=True,
+                            use_container_width=True
+                        )
+                    else:
+                        st.info(f"Standings pending season kickoff for {div_name}")
+                else:
+                    st.markdown("Status: `Pending` ⏳")
+
+            else: # Playoff bets
                 c1, c2 = st.columns([2, 1])
                 with c1:
-                    target_label = f"Objective: **{leg['target']}**" if leg['type'] == 'division' else f"🎯 Objective: **{leg['target']}**"
-                    st.markdown(target_label)
+                    st.markdown(f"🎯 Objective: **{leg['target']}**")
                 with c2:
                     st.markdown("Status: `Pending` ⏳")
             
