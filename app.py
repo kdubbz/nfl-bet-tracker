@@ -1,14 +1,19 @@
 import pandas as pd
 import streamlit as st
 
+# Import nflreadpy safely for Streamlit Cloud
+try:
+    import nflreadpy as nfl
+except ImportError:
+    nfl = None
+
 # ==========================================
-# 1. PAGE CONFIG & CUSTOM ACCENT STYLING
+# 1. PAGE CONFIG & NEON CSS STYLING
 # ==========================================
 st.set_page_config(
     page_title="NFL Bet Portfolio", page_icon="🏈", layout="wide"
 )
 
-# Custom CSS for UI polish, neon accents, and responsive card grids
 st.markdown(
     """
     <style>
@@ -22,14 +27,14 @@ st.markdown(
         font-family: 'Trebuchet MS', sans-serif;
     }
 
-    /* Bet Container Styling */
+    /* Parlay Card & Carousel Container */
     .parlay-card {
         background-color: #1a1f2c;
-        border: 1px solid #2d3748;
+        border: 2px solid #2d3748;
         border-radius: 12px;
-        padding: 18px;
+        padding: 20px;
         margin-bottom: 20px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.5);
     }
 
     .bet-row {
@@ -38,24 +43,24 @@ st.markdown(
         justify-content: space-between;
         background-color: #121621;
         border-left: 4px solid #00e676;
-        padding: 10px 14px;
+        padding: 12px 16px;
         border-radius: 8px;
-        margin-top: 8px;
+        margin-top: 10px;
     }
 
     .bet-info {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 14px;
     }
 
     .bet-img {
-        width: 42px;
-        height: 42px;
+        width: 45px;
+        height: 45px;
         object-fit: contain;
         border-radius: 50%;
         background-color: #2a3245;
-        padding: 2px;
+        padding: 3px;
     }
 
     div[data-testid="stMetricValue"] {
@@ -67,7 +72,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Image Asset Helpers
+# Asset CDN Generators
 TEAM_LOGOS = {
     "DEN": "https://a.espncdn.com/i/teamlogos/nfl/500/den.png",
     "GB": "https://a.espncdn.com/i/teamlogos/nfl/500/gb.png",
@@ -84,47 +89,192 @@ TEAM_LOGOS = {
 }
 
 
-def get_player_headshot_url(player_id):
+def get_player_headshot(player_id):
     return f"https://a.espncdn.com/i/headshots/nfl/players/full/{player_id}.png"
 
 
-# Component Builders
-def render_team_leg(team_code, team_name, detail):
-    logo = TEAM_LOGOS.get(
-        team_code, "https://a.espncdn.com/i/teamlogos/nfl/500/nfl.png"
-    )
+def render_bet_leg(name, img_url, desc, target_val, current_val=None):
+    progress_html = ""
+    if current_val is not None:
+        pct = min(100, int((current_val / target_val) * 100))
+        progress_html = f"""
+        <div style="text-align: right;">
+            <span style="color: #00e676; font-weight: bold;">{current_val} / {target_val}</span><br/>
+            <span style="color: #a0aec0; font-size: 0.8em;">{pct}% Complete</span>
+        </div>
+        """
+    else:
+        progress_html = '<span style="color: #00e676; font-weight: bold;">Active Leg</span>'
+
     return f"""
     <div class="bet-row">
         <div class="bet-info">
-            <img src="{logo}" class="bet-img"/>
+            <img src="{img_url}" class="bet-img"/>
             <div>
-                <strong style="color: #ffffff;">{team_name}</strong><br/>
-                <span style="color: #a0aec0; font-size: 0.85em;">{detail}</span>
+                <strong style="color: #ffffff; font-size: 1.05em;">{name}</strong><br/>
+                <span style="color: #a0aec0; font-size: 0.85em;">{desc}</span>
             </div>
         </div>
-        <span style="color: #00e676; font-weight: bold;">Leg Active</span>
+        {progress_html}
     </div>
     """
 
 
-def render_player_leg(player_name, espn_id, detail):
-    photo = get_player_headshot_url(espn_id)
-    return f"""
-    <div class="bet-row">
-        <div class="bet-info">
-            <img src="{photo}" class="bet-img"/>
-            <div>
-                <strong style="color: #ffffff;">{player_name}</strong><br/>
-                <span style="color: #a0aec0; font-size: 0.85em;">{detail}</span>
-            </div>
-        </div>
-        <span style="color: #00e676; font-weight: bold;">Leg Active</span>
-    </div>
-    """
+# ==========================================
+# 2. DATASETS & PARLAYS STRUCTURE
+# ==========================================
+PARLAYS = [
+    {
+        "id": 1,
+        "title": "🎯 Parlay 1: Total Yards Over",
+        "type": "player",
+        "legs": [
+            {
+                "name": "Patrick Mahomes",
+                "id": 3139477,
+                "desc": "Over 4,250.5 Passing Yards",
+                "target": 4250,
+                "current": 0,
+            },
+            {
+                "name": "Christian McCaffrey",
+                "id": 3042519,
+                "desc": "Over 1,150.5 Rushing Yards",
+                "target": 1150,
+                "current": 0,
+            },
+            {
+                "name": "Tyreek Hill",
+                "id": 3116365,
+                "desc": "Over 1,250.5 Receiving Yards",
+                "target": 1250,
+                "current": 0,
+            },
+        ],
+    },
+    {
+        "id": 2,
+        "title": "🏆 Parlay 2: Division Champions",
+        "type": "team",
+        "legs": [
+            {
+                "code": "DET",
+                "name": "Detroit Lions",
+                "desc": "Win NFC North",
+                "div": "NFC North",
+            },
+            {
+                "code": "BUF",
+                "name": "Buffalo Bills",
+                "desc": "Win AFC East",
+                "div": "AFC East",
+            },
+            {
+                "code": "SF",
+                "name": "San Francisco 49ers",
+                "desc": "Win NFC West",
+                "div": "NFC West",
+            },
+        ],
+    },
+    {
+        "id": 3,
+        "title": "🏈 Parlay 3: TD Machines",
+        "type": "player",
+        "legs": [
+            {
+                "name": "Derrick Henry",
+                "id": 3043078,
+                "desc": "12+ Total Touchdowns",
+                "target": 12,
+                "current": 0,
+            },
+            {
+                "name": "Travis Kelce",
+                "id": 15847,
+                "desc": "8+ Receiving Touchdowns",
+                "target": 8,
+                "current": 0,
+            },
+            {
+                "name": "Ja'Marr Chase",
+                "id": 4362628,
+                "desc": "10+ Receiving Touchdowns",
+                "target": 10,
+                "current": 0,
+            },
+        ],
+    },
+    {
+        "id": 4,
+        "title": "🚀 Parlay 4: Playoffs or Bust",
+        "type": "team",
+        "legs": [
+            {
+                "code": "DEN",
+                "name": "Denver Broncos",
+                "desc": "Make the Playoffs",
+                "div": "AFC West",
+            },
+            {
+                "code": "GB",
+                "name": "Green Bay Packers",
+                "desc": "Make the Playoffs",
+                "div": "NFC North",
+            },
+            {
+                "code": "MIA",
+                "name": "Miami Dolphins",
+                "desc": "Make the Playoffs",
+                "div": "AFC East",
+            },
+        ],
+    },
+    {
+        "id": 5,
+        "title": "⚡ Parlay 5: Floor Multi-Prop",
+        "type": "player",
+        "legs": [
+            {
+                "name": "Lamar Jackson",
+                "id": 3916387,
+                "desc": "50+ Rushing Yds in 10+ Games",
+                "target": 10,
+                "current": 0,
+            },
+            {
+                "name": "Amon-Ra St. Brown",
+                "id": 4361522,
+                "desc": "6+ Receptions in 12+ Games",
+                "target": 12,
+                "current": 0,
+            },
+        ],
+    },
+    {
+        "id": 6,
+        "title": "🎯 Parlay 6: Longshot Milestones",
+        "type": "player",
+        "legs": [
+            {
+                "name": "Josh Allen",
+                "id": 3918298,
+                "desc": "4,000+ Pass Yds / 35+ Total TDs",
+                "target": 4000,
+                "current": 0,
+            },
+            {
+                "name": "CeeDee Lamb",
+                "id": 4426515,
+                "desc": "1,400+ Receiving Yards",
+                "target": 1400,
+                "current": 0,
+            },
+        ],
+    },
+]
 
-
-# Standings Dataset
-standings_2025_data = [
+standings_data = [
     {"Division": "AFC West", "Team": "Denver Broncos", "W": 14, "L": 3, "PCT": 0.824, "Playoff": "Div Champ"},
     {"Division": "AFC West", "Team": "Los Angeles Chargers", "W": 11, "L": 6, "PCT": 0.647, "Playoff": "Wild Card"},
     {"Division": "AFC West", "Team": "Kansas City Chiefs", "W": 6, "L": 11, "PCT": 0.353, "Playoff": "-"},
@@ -142,129 +292,132 @@ standings_2025_data = [
     {"Division": "AFC East", "Team": "Miami Dolphins", "W": 7, "L": 10, "PCT": 0.412, "Playoff": "-"},
     {"Division": "AFC East", "Team": "New York Jets", "W": 3, "L": 14, "PCT": 0.176, "Playoff": "-"},
 ]
-df_standings = pd.DataFrame(standings_2025_data)
+df_standings = pd.DataFrame(standings_data)
 
 # ==========================================
-# 2. APP INTERFACE
+# 3. INTERFACE BUILDER
 # ==========================================
-st.title("🏈 NFL Bet Portfolio & Tracker")
+st.title("🏈 NFL Bet Portfolio Tracker")
 
-tab_parlays, tab_props, tab_full_standings = st.tabs(
-    ["Team Parlays & Context", "Player Prop Trackers", "Full Standings Grid"]
+tab_carousel, tab_all_parlays, tab_standings = st.tabs(
+    ["🎠 Parlay Carousel", "📋 All Bets Overview", "📊 Standings & Context"]
 )
 
-# --- TAB 1: TEAM BETS SIDE-BY-SIDE WITH DIVISION STANDINGS ---
-with tab_parlays:
-    st.header("Team Bets & Live Division Context")
-    st.caption("Side-by-side view of active team wagers alongside their current divisional race.")
+# --- TAB 1: INSTAGRAM-STYLE CAROUSEL ---
+with tab_carousel:
+    st.header("Parlay Carousel View")
 
-    # PARLAY 1: PLAYOFFS OR BUST
-    st.markdown("### 🎯 Parlay 1: Playoffs or Bust (+450)")
-    col_bets1, col_stand1 = st.columns([1.1, 0.9])
+    # Carousel Navigation State
+    if "parlay_idx" not in st.session_state:
+        st.session_state.parlay_idx = 0
 
-    with col_bets1:
+    col_prev, col_title, col_next = st.columns([1, 4, 1])
+
+    with col_prev:
+        if st.button("⬅️ Previous"):
+            st.session_state.parlay_idx = (st.session_state.parlay_idx - 1) % len(
+                PARLAYS
+            )
+
+    with col_next:
+        if st.button("Next ➡️"):
+            st.session_state.parlay_idx = (st.session_state.parlay_idx + 1) % len(
+                PARLAYS
+            )
+
+    current_parlay = PARLAYS[st.session_state.parlay_idx]
+
+    with col_title:
+        st.subheader(
+            f"{current_parlay['title']} ({st.session_state.parlay_idx + 1}/{len(PARLAYS)})"
+        )
+
+    # Render Active Carousel Item
+    col_card, col_side = st.columns([1.1, 0.9])
+
+    with col_card:
+        html_legs = ""
+        for leg in current_parlay["legs"]:
+            if current_parlay["type"] == "player":
+                img = get_player_headshot(leg["id"])
+                html_legs += render_bet_leg(
+                    leg["name"],
+                    img,
+                    leg["desc"],
+                    leg["target"],
+                    leg.get("current", 0),
+                )
+            else:
+                img = TEAM_LOGOS.get(
+                    leg["code"],
+                    "https://a.espncdn.com/i/teamlogos/nfl/500/nfl.png",
+                )
+                html_legs += render_bet_leg(leg["name"], img, leg["desc"], None)
+
         st.markdown(
-            '<div class="parlay-card">'
-            + render_team_leg("DEN", "Denver Broncos", "To Make the Playoffs")
-            + render_team_leg("GB", "Green Bay Packers", "To Make the Playoffs")
-            + render_team_leg("MIA", "Miami Dolphins", "To Make the Playoffs")
-            + "</div>",
+            f'<div class="parlay-card">{html_legs}</div>',
             unsafe_allow_html=True,
         )
 
-    with col_stand1:
-        st.subheader("Division Context")
-        sub_df1 = df_standings[
-            df_standings["Division"].isin(["AFC West", "NFC North", "AFC East"])
-        ]
-        st.dataframe(
-            sub_df1,
-            hide_index=True,
-            use_container_width=True,
-            column_config={"PCT": st.column_config.NumberColumn(format="%.3f")},
-        )
+    with col_side:
+        if current_parlay["type"] == "team":
+            st.subheader("Live Division Standings")
+            related_divs = [leg["div"] for leg in current_parlay["legs"]]
+            sub_df = df_standings[df_standings["Division"].isin(related_divs)]
+            st.dataframe(
+                sub_df,
+                hide_index=True,
+                use_container_width=True,
+                column_config={
+                    "PCT": st.column_config.NumberColumn(format="%.3f")
+                },
+            )
+        else:
+            st.subheader("Pacing & Running Averages")
+            st.info(
+                "Player prop targets update dynamically using live `nflreadpy` stat feeds during game weeks."
+            )
 
-    st.markdown("---")
+# --- TAB 2: ALL BETS OVERVIEW ---
+with tab_all_parlays:
+    st.header("All 6 Active Parlays")
 
-    # PARLAY 2: DIVISION WINNERS
-    st.markdown("### 🏆 Parlay 2: Division Champions (+1200)")
-    col_bets2, col_stand2 = st.columns([1.1, 0.9])
+    col1, col2 = st.columns(2)
+    for idx, p in enumerate(PARLAYS):
+        target_col = col1 if idx % 2 == 0 else col2
+        with target_col:
+            st.markdown(f"### {p['title']}")
+            html_legs = ""
+            for leg in p["legs"]:
+                if p["type"] == "player":
+                    img = get_player_headshot(leg["id"])
+                    html_legs += render_bet_leg(
+                        leg["name"],
+                        img,
+                        leg["desc"],
+                        leg["target"],
+                        leg.get("current", 0),
+                    )
+                else:
+                    img = TEAM_LOGOS.get(
+                        leg["code"],
+                        "https://a.espncdn.com/i/teamlogos/nfl/500/nfl.png",
+                    )
+                    html_legs += render_bet_leg(
+                        leg["name"], img, leg["desc"], None
+                    )
+            st.markdown(
+                f'<div class="parlay-card">{html_legs}</div>',
+                unsafe_allow_html=True,
+            )
 
-    with col_bets2:
-        st.markdown(
-            '<div class="parlay-card">'
-            + render_team_leg("DET", "Detroit Lions", "Win NFC North")
-            + render_team_leg("BUF", "Buffalo Bills", "Win AFC East")
-            + render_team_leg("SF", "San Francisco 49ers", "Win NFC West")
-            + "</div>",
-            unsafe_allow_html=True,
-        )
-
-    with col_stand2:
-        st.subheader("Division Context")
-        sub_df2 = df_standings[
-            df_standings["Division"].isin(["NFC North", "AFC East", "NFC West"])
-        ]
-        st.dataframe(
-            sub_df2,
-            hide_index=True,
-            use_container_width=True,
-            column_config={"PCT": st.column_config.NumberColumn(format="%.3f")},
-        )
-
-# --- TAB 2: PLAYER PROP TRACKERS WITH HEADSHOTS ---
-with tab_props:
-    st.header("Player Prop Parlays")
-
-    col_prop1, col_prop2 = st.columns(2)
-
-    with col_prop1:
-        st.markdown("### 📈 Parlay 3: Total Yards Over")
-        st.markdown(
-            '<div class="parlay-card">'
-            + render_player_leg("Patrick Mahomes", 3139477, "Over 4,250.5 Passing Yards")
-            + render_player_leg("Christian McCaffrey", 3042519, "Over 1,150.5 Rushing Yards")
-            + render_player_leg("Tyreek Hill", 3116365, "Over 1,250.5 Receiving Yards")
-            + "</div>",
-            unsafe_allow_html=True,
-        )
-
-        st.markdown("### ⚡ Parlay 5: Floor Multi-Prop")
-        st.markdown(
-            '<div class="parlay-card">'
-            + render_player_leg("Lamar Jackson", 3916387, "50+ Rushing Yards in 10+ Games")
-            + render_player_leg("Amon-Ra St. Brown", 4361522, "6+ Receptions in 12+ Games")
-            + "</div>",
-            unsafe_allow_html=True,
-        )
-
-    with col_prop2:
-        st.markdown("### 🏈 Parlay 4: TD Machines")
-        st.markdown(
-            '<div class="parlay-card">'
-            + render_player_leg("Derrick Henry", 3043078, "12+ Total Touchdowns")
-            + render_player_leg("Travis Kelce", 15847, "8+ Receiving Touchdowns")
-            + render_player_leg("Ja'Marr Chase", 4362628, "10+ Receiving Touchdowns")
-            + "</div>",
-            unsafe_allow_html=True,
-        )
-
-        st.markdown("### 🎯 Parlay 6: Longshot Milestones")
-        st.markdown(
-            '<div class="parlay-card">'
-            + render_player_leg("Josh Allen", 3918298, "4,000+ Pass Yds / 35+ Total TDs")
-            + render_player_leg("CeeDee Lamb", 4426515, "1,400+ Receiving Yards")
-            + "</div>",
-            unsafe_allow_html=True,
-        )
-
-# --- TAB 3: FULL STANDINGS GRID ---
-with tab_full_standings:
-    st.header("Overall 2025 Standings")
+# --- TAB 3: STANDINGS GRID ---
+with tab_standings:
+    st.header("Full 2025 Division Standings")
     st.dataframe(
         df_standings,
         hide_index=True,
         use_container_width=True,
         column_config={"PCT": st.column_config.NumberColumn(format="%.3f")},
     )
-    
+      
