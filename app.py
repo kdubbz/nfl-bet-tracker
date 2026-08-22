@@ -53,7 +53,7 @@ def get_stat_label(stat_key):
 PARLAYS = [
     {
         "id": 0,
-        "title": "The Triple-Threat Over",
+        "title": "Total Yards Over",
         "wager": "BONUS BET",
         "payout": "$148.94",
         "legs": [
@@ -67,7 +67,7 @@ PARLAYS = [
     },
     {
         "id": 1,
-        "title": "Franchise Aerial & Mobile Engine",
+        "title": "Maye there be Love",
         "wager": "BONUS BET",
         "payout": "$39.53",
         "legs": [
@@ -79,7 +79,7 @@ PARLAYS = [
     },
     {
         "id": 2,
-        "title": "Elite High-Volume Touchdown Slate",
+        "title": "TD Machines",
         "wager": "BONUS BET",
         "payout": "$141.23",
         "legs": [
@@ -93,7 +93,7 @@ PARLAYS = [
     },
     {
         "id": 3,
-        "title": "Heavy Divisional Heavyweights",
+        "title": "Division Winners",
         "wager": "$10.00",
         "payout": "$40.19",
         "legs": [
@@ -105,7 +105,7 @@ PARLAYS = [
     },
     {
         "id": 4,
-        "title": "Precision Divisional Contenders",
+        "title": "Division Winners",
         "wager": "$5.00",
         "payout": "$54.33",
         "legs": [
@@ -117,7 +117,7 @@ PARLAYS = [
     },
     {
         "id": 5,
-        "title": "Mega Playoff Bracket Clean Sweep",
+        "title": "Playoffs or Bust",
         "wager": "BONUS BET",
         "payout": "$166.35",
         "legs": [
