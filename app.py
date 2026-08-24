@@ -10,12 +10,13 @@ st.set_page_config(page_title="NFL Bet Portfolio", layout="centered")
 st.html("""
 <style>
 /* Card Styling */
-.st-key-parlay-card {
+.parlay-card {
     border: 2px solid #31333F !important;
     border-radius: 12px !important;
     padding: 20px !important;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
     background-color: #0E1117 !important;
+    margin-bottom: 25px;
 }
 
 .metric-box {
@@ -149,28 +150,6 @@ if auto_refresh:
     st.rerun()
 
 
-# --- TITLE ---
-st.title("🏈 NFL Bet Portfolio")
-
-# --- SEASON TOGGLE ---
-VIEW_MODE = st.radio(
-    "Select View Mode:",
-    options=["🔬 2025 Research & Baselines", "📊 Live 2026 Tracking Tracker"],
-    horizontal=True
-)
-
-def get_stat_label(stat_key):
-    mapping = {
-        "passing_yards": "Pass Yds",
-        "rushing_yards": "Rush Yds",
-        "receiving_yards": "Rec Yds",
-        "passing_touchdowns": "Pass TDs",
-        "rushing_touchdowns": "Rush TDs",
-        "receiving_touchdowns": "Rec TDs"
-    }
-    return mapping.get(stat_key, "Units")
-
-
 # --- PORTFOLIO DEFINITIONS ---
 PARLAYS = [
     {
@@ -223,32 +202,46 @@ PARLAYS = [
     }
 ]
 
-# --- SLIDE STATE ---
-if "parlay_index" not in st.session_state:
-    st.session_state.parlay_index = 0
+def get_stat_label(stat_key):
+    mapping = {
+        "passing_yards": "Pass Yds",
+        "rushing_yards": "Rush Yds",
+        "receiving_yards": "Rec Yds",
+        "passing_touchdowns": "Pass TDs",
+        "rushing_touchdowns": "Rush TDs",
+        "receiving_touchdowns": "Rec TDs"
+    }
+    return mapping.get(stat_key, "Units")
 
-def prev_slide():
-    if st.session_state.parlay_index > 0:
-        st.session_state.parlay_index -= 1
+# --- UI HEADER ---
+st.title("🏈 NFL Bet Portfolio")
 
-def next_slide():
-    if st.session_state.parlay_index < len(PARLAYS) - 1:
-        st.session_state.parlay_index += 1
-
-idx = st.session_state.parlay_index
-current_parlay = PARLAYS[idx]
-active_year = 2025 if "2025" in VIEW_MODE else 2026
-
-stats_df = load_nfl_player_stats(active_year)
-standings_df = load_nfl_standings(active_year)
+# --- TABS SETUP ---
+tab_research, tab_live = st.tabs(["🔬 2025 Research", "🔴 Live Game Day Tracker"])
 
 # =========================================================
-# 🔬 VIEW 1: 2025 RESEARCH & BASELINES
+# TAB 1: 2025 RESEARCH (PAGINATED VIEW)
 # =========================================================
-if "2025" in VIEW_MODE:
-    st.header("🔬 Analytical Research & Baseline Metrics")
-    
-    with st.container(border=True, key="parlay-card"):
+with tab_research:
+    # Load 2025 Data
+    stats_df_25 = load_nfl_player_stats(2025)
+    standings_df_25 = load_nfl_standings(2025)
+
+    if "parlay_index" not in st.session_state:
+        st.session_state.parlay_index = 0
+
+    def prev_slide():
+        if st.session_state.parlay_index > 0:
+            st.session_state.parlay_index -= 1
+
+    def next_slide():
+        if st.session_state.parlay_index < len(PARLAYS) - 1:
+            st.session_state.parlay_index += 1
+
+    idx = st.session_state.parlay_index
+    current_parlay = PARLAYS[idx]
+
+    with st.container(border=True):
         st.subheader(f"⚡ {current_parlay['title']}")
         col_a, col_b = st.columns(2)
         with col_a:
@@ -268,9 +261,9 @@ if "2025" in VIEW_MODE:
                 with c2:
                     db_name = leg['db_name'].replace(" ", "")
                     api_stat = 0
-                    if not stats_df.empty and 'player_name' in stats_df.columns:
-                        player_data = stats_df[stats_df['player_name'] == db_name]
-                        if not player_data.empty and leg['stat'] in stats_df.columns:
+                    if not stats_df_25.empty and 'player_name' in stats_df_25.columns:
+                        player_data = stats_df_25[stats_df_25['player_name'] == db_name]
+                        if not player_data.empty and leg['stat'] in stats_df_25.columns:
                             api_stat = player_data[leg['stat']].sum()
                     display_val = api_stat if api_stat > 0 else leg['2025_actual']
                     st.metric(label=f"2025 {stat_name}", value=f"{display_val:,.0f}")
@@ -286,107 +279,116 @@ if "2025" in VIEW_MODE:
             st.markdown(f"<div class='metric-box'>{leg['narrative']}</div>", unsafe_allow_html=True)
             st.markdown("---")
 
+    # Pagination navigation
+    st.write("---")
+    col_prev, col_indicator, col_next = st.columns([1, 2, 1])
+    with col_prev:
+        if idx > 0:
+            st.button("◀ Previous", on_click=prev_slide, use_container_width=True)
+    with col_indicator:
+        st.markdown(f"<h4 style='text-align: center; margin-top: 5px;'>Parlay {idx + 1} of {len(PARLAYS)}</h4>", unsafe_allow_html=True)
+    with col_next:
+        if idx < len(PARLAYS) - 1:
+            st.button("Next ▶", on_click=next_slide, use_container_width=True)
+
+
 # =========================================================
-# 📊 VIEW 2: 2026 LIVE TRACKER
+# TAB 2: LIVE 2026 TRACKER (ALL-IN-ONE DASHBOARD)
 # =========================================================
-else:
-    st.header("📊 Active 2026 Parlay Progress Tracker")
+with tab_live:
+    # Load 2026 Data
+    stats_df_26 = load_nfl_player_stats(2026)
+    standings_df_26 = load_nfl_standings(2026)
+
+    st.markdown("### 🔴 Active 2026 Progress")
+    st.caption("Monitoring all parlays simultaneously. Enable polling in the sidebar for auto-refresh.")
     
-    with st.container(border=True, key="parlay-card"):
-        st.subheader(f"⚡ {current_parlay['title']}")
-        col_a, col_b = st.columns(2)
-        with col_a:
-            st.markdown(f"**Wager:** `{current_parlay['wager']}`")
-        with col_b:
-            st.markdown(f"**Est. Payout:** `{current_parlay['payout']}`")
-        st.divider()
-        
-        for leg in current_parlay['legs']:
-            st.markdown(f"##### 👤 {leg['name']}")
+    for parlay in PARLAYS:
+        with st.container(border=True):
+            st.subheader(f"⚡ {parlay['title']}")
+            col_a, col_b = st.columns(2)
+            with col_a:
+                st.markdown(f"**Wager:** `{parlay['wager']}`")
+            with col_b:
+                st.markdown(f"**Est. Payout:** `{parlay['payout']}`")
+            st.divider()
             
-            if leg['type'] == 'player':
-                current_total = 0.0
-                games_played = 0
+            for leg in parlay['legs']:
+                st.markdown(f"##### 👤 {leg['name']}")
                 
-                if not stats_df.empty and 'player_name' in stats_df.columns:
-                    db_name = leg['db_name'].replace(" ", "")
-                    player_data = stats_df[stats_df['player_name'] == db_name]
-                    if not player_data.empty and leg['stat'] in stats_df.columns:
-                        current_total = float(player_data[leg['stat']].sum())
-                        if 'games' in player_data.columns:
-                            games_played = int(player_data['games'].sum())
-                        elif 'week' in player_data.columns:
-                            games_played = int(player_data['week'].nunique())
-
-                is_td_leg = current_parlay['id'] == 2 or "touchdown" in leg['stat'] or leg['stat'].endswith("_tds")
-                units_remaining = max(0.0, leg['line'] - current_total)
-                games_remaining = max(1, 17 - games_played)
-                needed_per_game = units_remaining / games_remaining if units_remaining > 0 else 0.0
-                pct_complete = min(float(current_total / leg['line']), 1.0) if leg['line'] > 0 else 0.0
-                stat_name = get_stat_label(leg['stat'])
-                
-                c1, c2, c3 = st.columns(3)
-                with c1:
-                    st.metric(label=f"Current {stat_name}", value=f"{current_total:,.0f}" if is_td_leg else f"{current_total:,.1f}")
-                with c2:
-                    st.metric(label=f"Goal {stat_name}", value=f"{leg['line']:,}")
-                with c3:
-                    if is_td_leg:
-                        st.metric(label="TDs Remaining", value=f"{units_remaining:,.1f}", delta=f"{games_remaining} games left")
-                    else:
-                        st.metric(label="Needed / Game", value=f"{needed_per_game:.1f}", delta=f"{games_remaining} games left")
-                
-                st.progress(pct_complete, text=f"{pct_complete*100:.1f}% Completed ({units_remaining:,.1f} {stat_name.lower()} remaining)")
-            
-            elif leg['type'] == 'division':
-                st.markdown(f"**Objective:** {leg['target']}")
-                div_name = leg.get('division')
-                
-                if div_name and not standings_df.empty:
-                    div_standings = standings_df[standings_df['Div'] == div_name].copy()
-                    div_standings = div_standings.sort_values(by=['PCT', 'W'], ascending=False).reset_index(drop=True)
-                    div_standings['Pos'] = range(1, len(div_standings) + 1)
+                # --- PLAYER BETS ---
+                if leg['type'] == 'player':
+                    current_total = 0.0
+                    games_played = 0
                     
-                    st.caption(f"🏆 Live Standings — {div_name}")
-                    st.dataframe(
-                        div_standings[['Pos', 'TeamName', 'W', 'L', 'T']],
-                        hide_index=True,
-                        use_container_width=True
-                    )
-                else:
-                    st.info(f"Standings pending season kickoff for {div_name}")
+                    if not stats_df_26.empty and 'player_name' in stats_df_26.columns:
+                        db_name = leg['db_name'].replace(" ", "")
+                        player_data = stats_df_26[stats_df_26['player_name'] == db_name]
+                        if not player_data.empty and leg['stat'] in stats_df_26.columns:
+                            current_total = float(player_data[leg['stat']].sum())
+                            if 'games' in player_data.columns:
+                                games_played = int(player_data['games'].sum())
+                            elif 'week' in player_data.columns:
+                                games_played = int(player_data['week'].nunique())
 
-            elif leg['type'] == 'playoff':
-                c1, c2 = st.columns([1, 1])
-                with c1:
-                    st.markdown(f"🎯 Objective: **{leg['target']}**")
-                with c2:
-                    if not standings_df.empty:
-                        team_data = standings_df[standings_df['TeamName'] == leg['name']]
-                        if not team_data.empty:
-                            seed = team_data['Seed'].values[0]
-                            conf = team_data['Conf'].values[0]
-                            
-                            if seed <= 7:
-                                st.success(f"✅ Currently IN (Seed #{seed} {conf})")
-                            else:
-                                st.error(f"❌ Currently OUT (Seed #{seed} {conf})")
+                    is_td_leg = parlay['id'] == 2 or "touchdown" in leg['stat'] or leg['stat'].endswith("_tds")
+                    units_remaining = max(0.0, leg['line'] - current_total)
+                    games_remaining = max(1, 17 - games_played)
+                    needed_per_game = units_remaining / games_remaining if units_remaining > 0 else 0.0
+                    pct_complete = min(float(current_total / leg['line']), 1.0) if leg['line'] > 0 else 0.0
+                    stat_name = get_stat_label(leg['stat'])
+                    
+                    c1, c2, c3 = st.columns(3)
+                    with c1:
+                        st.metric(label=f"Current {stat_name}", value=f"{current_total:,.0f}" if is_td_leg else f"{current_total:,.1f}")
+                    with c2:
+                        st.metric(label=f"Goal {stat_name}", value=f"{leg['line']:,}")
+                    with c3:
+                        if is_td_leg:
+                            st.metric(label="TDs Remaining", value=f"{units_remaining:,.1f}", delta=f"{games_remaining} games left")
                         else:
-                            st.warning("Status: Matchup Unknown")
+                            st.metric(label="Needed / Game", value=f"{needed_per_game:.1f}", delta=f"{games_remaining} games left")
+                    
+                    st.progress(pct_complete, text=f"{pct_complete*100:.1f}% Completed ({units_remaining:,.1f} {stat_name.lower()} remaining)")
+                
+                # --- DIVISION BETS ---
+                elif leg['type'] == 'division':
+                    st.markdown(f"**Objective:** {leg['target']}")
+                    div_name = leg.get('division')
+                    
+                    if div_name and not standings_df_26.empty:
+                        div_standings = standings_df_26[standings_df_26['Div'] == div_name].copy()
+                        div_standings = div_standings.sort_values(by=['PCT', 'W'], ascending=False).reset_index(drop=True)
+                        div_standings['Pos'] = range(1, len(div_standings) + 1)
+                        
+                        st.dataframe(
+                            div_standings[['Pos', 'TeamName', 'W', 'L', 'T']],
+                            hide_index=True,
+                            use_container_width=True
+                        )
                     else:
-                        st.info("Status: Pending Kickoff ⏳")
-            
-            st.markdown("<br>", unsafe_allow_html=True)
+                        st.info(f"Standings pending season kickoff for {div_name}")
 
-# --- DYNAMIC BOTTOM NAVIGATION ---
-st.write("---")
-col_prev, col_indicator, col_next = st.columns([1, 2, 1])
-with col_prev:
-    if idx > 0:
-        st.button("◀ Previous", on_click=prev_slide, use_container_width=True)
-with col_indicator:
-    st.markdown(f"<h4 style='text-align: center; margin-top: 5px;'>Parlay {idx + 1} of {len(PARLAYS)}</h4>", unsafe_allow_html=True)
-with col_next:
-    if idx < len(PARLAYS) - 1:
-        st.button("Next ▶", on_click=next_slide, use_container_width=True)
-st.write("---")
+                # --- PLAYOFF BETS ---
+                elif leg['type'] == 'playoff':
+                    c1, c2 = st.columns([1, 1])
+                    with c1:
+                        st.markdown(f"🎯 Objective: **{leg['target']}**")
+                    with c2:
+                        if not standings_df_26.empty:
+                            team_data = standings_df_26[standings_df_26['TeamName'] == leg['name']]
+                            if not team_data.empty:
+                                seed = team_data['Seed'].values[0]
+                                conf = team_data['Conf'].values[0]
+                                
+                                if seed <= 7:
+                                    st.success(f"✅ Currently IN (Seed #{seed} {conf})")
+                                else:
+                                    st.error(f"❌ Currently OUT (Seed #{seed} {conf})")
+                            else:
+                                st.warning("Status: Matchup Unknown")
+                        else:
+                            st.info("Status: Pending Kickoff ⏳")
+                
+                st.markdown("<br>", unsafe_allow_html=True)
+                  
