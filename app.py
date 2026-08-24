@@ -82,16 +82,23 @@ TEAM_INFO = {
 @st.cache_data(ttl=60)
 def load_nfl_player_stats(year):
     try:
-        raw_stats = nfl.load_player_stats([year])
-        return raw_stats.to_pandas()
+        return nfl.load_player_stats([year]).to_pandas()
+    except Exception:
+        return pd.DataFrame()
+
+@st.cache_data(ttl=60)
+def load_raw_schedules(year):
+    try:
+        df = nfl.load_schedules([year]).to_pandas()
+        return df[df['game_type'] == 'REG'].copy()
     except Exception:
         return pd.DataFrame()
 
 @st.cache_data(ttl=60)
 def load_nfl_standings(year):
     try:
-        schedules = nfl.load_schedules([year]).to_pandas()
-        completed = schedules[(schedules['game_type'] == 'REG') & (schedules['result'].notna())]
+        schedules = load_raw_schedules(year)
+        completed = schedules[schedules['result'].notna()]
         
         teams = {abbr: {'W': 0, 'L': 0, 'T': 0} for abbr in TEAM_INFO.keys()}
         for _, game in completed.iterrows():
@@ -140,12 +147,6 @@ def load_nfl_standings(year):
     except Exception:
         return pd.DataFrame()
 
-# --- SIDEBAR: LIVE POLLING ---
-st.sidebar.header("🔴 Live Settings")
-auto_refresh = st.sidebar.toggle("Live Game Day Polling (60s)", value=False, help="Automatically refreshes the app every 60 seconds to pull live stats.")
-if auto_refresh:
-    time.sleep(60)
-    st.rerun()
 
 # --- PORTFOLIO DEFINITIONS ---
 PARLAYS = [
@@ -229,9 +230,9 @@ def next_slide_26():
 
 # Pre-load data so tabs populate instantly
 stats_df_25 = load_nfl_player_stats(2025)
-standings_df_25 = load_nfl_standings(2025)
 stats_df_26 = load_nfl_player_stats(2026)
 standings_df_26 = load_nfl_standings(2026)
+sched_df_26 = load_raw_schedules(2026)
 
 
 tab_research, tab_tracker, tab_live = st.tabs(["🔬 2025 Research", "📊 Season Tracker", "🔴 Live Sunday Dashboard"])
@@ -392,65 +393,86 @@ with tab_tracker:
 # =========================================================
 with tab_live:
     st.markdown("### 🔴 Sunday Game Day Dashboard")
-    st.caption("A one-stop view of every player and team in your portfolio. Enable polling in the sidebar for real-time updates.")
+    st.toggle("Enable Live Polling (60s)", key="auto_refresh", help="Turn this on to automatically fetch fresh scores and stats every minute.")
     
-    # --- AGGREGATE PLAYER DATA ---
-    player_data_list = []
-    team_data_list = []
-    
+    # 1. FIND THE ACTIVE NFL WEEK
+    current_week = 1
+    if not sched_df_26.empty and 'week' in sched_df_26.columns:
+        unplayed = sched_df_26[sched_df_26['result'].isna()]
+        if not unplayed.empty:
+            current_week = int(unplayed['week'].min())
+        else:
+            current_week = int(sched_df_26['week'].max())
+
+    st.divider()
+
+    # 2. PLAYER BOX SCORES FOR ACTIVE WEEK
+    st.subheader(f"🏃‍♂️ Player Box Scores (Week {current_week})")
+    player_map = {}
     for parlay in PARLAYS:
         for leg in parlay['legs']:
             if leg['type'] == 'player':
-                current_total = 0.0
-                if not stats_df_26.empty and 'player_name' in stats_df_26.columns:
-                    db_name = leg['db_name'].replace(" ", "")
-                    p_data = stats_df_26[stats_df_26['player_name'] == db_name]
-                    if not p_data.empty and leg['stat'] in stats_df_26.columns:
-                        current_total = float(p_data[leg['stat']].sum())
-                
-                pct = min((current_total / leg['line']) * 100, 100) if leg['line'] > 0 else 0
-                
-                player_data_list.append({
-                    "Player": leg['name'],
-                    "Stat": get_stat_label(leg['stat']),
-                    "Goal": leg['line'],
-                    "Current": round(current_total, 1),
-                    "Remaining": round(max(0, leg['line'] - current_total), 1),
-                    "% Complete": f"{pct:.1f}%"
-                })
-            
-            elif leg['type'] in ['division', 'playoff']:
-                status = "Pending"
-                if not standings_df_26.empty:
-                    if leg['type'] == 'division':
-                        div_name = leg.get('division')
-                        if div_name:
-                            div_standings = standings_df_26[standings_df_26['Div'] == div_name].sort_values(by=['PCT', 'W'], ascending=False).reset_index(drop=True)
-                            team_idx = div_standings.index[div_standings['TeamName'] == leg['name']].tolist()
-                            if team_idx:
-                                status = f"{team_idx[0] + 1} in {div_name}"
-                    
-                    elif leg['type'] == 'playoff':
-                        t_data = standings_df_26[standings_df_26['TeamName'] == leg['name']]
-                        if not t_data.empty:
-                            seed = t_data['Seed'].values[0]
-                            conf = t_data['Conf'].values[0]
-                            status = f"IN (Seed {seed} {conf})" if seed <= 7 else f"OUT (Seed {seed} {conf})"
+                player_map[leg['db_name'].replace(" ", "")] = leg['name']
 
-                team_data_list.append({
-                    "Team": leg['name'],
-                    "Bet Type": "Win Division" if leg['type'] == 'division' else "Make Playoffs",
-                    "Live Status": status
-                })
-
-    # --- RENDER DASHBOARDS ---
-    st.subheader("🏃‍♂️ Live Player Tracker")
-    if player_data_list:
-        df_players = pd.DataFrame(player_data_list).drop_duplicates(subset=["Player", "Stat"])
-        st.dataframe(df_players, hide_index=True, use_container_width=True)
-    
-    st.subheader("🛡️ Live Team Tracker")
-    if team_data_list:
-        df_teams = pd.DataFrame(team_data_list).drop_duplicates(subset=["Team", "Bet Type"])
-        st.dataframe(df_teams, hide_index=True, use_container_width=True)
+    box_score_data = []
+    if not stats_df_26.empty:
+        # Filter stats for JUST the current week to act as a true box score
+        week_stats = stats_df_26[stats_df_26['week'] == current_week] if 'week' in stats_df_26.columns else stats_df_26
         
+        for db_name, full_name in player_map.items():
+            row_data = week_stats[week_stats['player_name'] == db_name]
+            
+            box_score_data.append({
+                "Player": full_name,
+                "Pass Yds": int(row_data['passing_yards'].sum()) if not row_data.empty and 'passing_yards' in row_data.columns else 0,
+                "Pass TD": int(row_data['passing_touchdowns'].sum()) if not row_data.empty and 'passing_touchdowns' in row_data.columns else 0,
+                "INT": int(row_data['interceptions'].sum()) if not row_data.empty and 'interceptions' in row_data.columns else 0,
+                "Rush Yds": int(row_data['rushing_yards'].sum()) if not row_data.empty and 'rushing_yards' in row_data.columns else 0,
+                "Rush TD": int(row_data['rushing_touchdowns'].sum()) if not row_data.empty and 'rushing_touchdowns' in row_data.columns else 0,
+                "Rec": int(row_data['receptions'].sum()) if not row_data.empty and 'receptions' in row_data.columns else 0,
+                "Rec Yds": int(row_data['receiving_yards'].sum()) if not row_data.empty and 'receiving_yards' in row_data.columns else 0,
+                "Rec TD": int(row_data['receiving_touchdowns'].sum()) if not row_data.empty and 'receiving_touchdowns' in row_data.columns else 0,
+            })
+            
+    if box_score_data:
+        st.dataframe(pd.DataFrame(box_score_data).drop_duplicates(subset=["Player"]), hide_index=True, use_container_width=True)
+
+    # 3. LIVE SCOREBOARD FOR ACTIVE WEEK
+    st.subheader(f"🏈 Live Scoreboard (Week {current_week})")
+    scoreboard_data = []
+    if not sched_df_26.empty:
+        week_games = sched_df_26[sched_df_26['week'] == current_week]
+        
+        for _, game in week_games.iterrows():
+            away = game.get('away_team', '')
+            home = game.get('home_team', '')
+            away_s = game.get('away_score', pd.NA)
+            home_s = game.get('home_score', pd.NA)
+            g_time = game.get('gametime', 'TBD')
+            
+            if pd.isna(away_s) or pd.isna(home_s):
+                score_str = "Pending"
+            else:
+                score_str = f"{int(away_s)} - {int(home_s)}"
+                
+            scoreboard_data.append({
+                "Matchup": f"{away} @ {home}",
+                "Score (Away-Home)": score_str,
+                "Kickoff (ET)": g_time
+            })
+            
+    if scoreboard_data:
+        st.dataframe(pd.DataFrame(scoreboard_data), hide_index=True, use_container_width=True)
+    else:
+        st.info("No games scheduled for this week.")
+
+
+# =========================================================
+# AUTO REFRESH LOOP
+# =========================================================
+# By putting this at the very end of the file, the entire UI renders first.
+# Then, if the toggle is active, the script hangs here for 60s before re-running.
+if st.session_state.get('auto_refresh', False):
+    time.sleep(60)
+    st.rerun()
+    
